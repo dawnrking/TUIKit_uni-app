@@ -1,13 +1,11 @@
 <script lang="ts">
   import { loginFromStorage } from './server/loginService';
-  import { pushService } from './server/pushService';
 
   let firstBackTime = 0
 
   export default {
     onLaunch: function () {
       console.log('App Launch')
-      pushService.init();
       loginFromStorage();
       uni?.removeStorage({
         key: 'showSecurity',

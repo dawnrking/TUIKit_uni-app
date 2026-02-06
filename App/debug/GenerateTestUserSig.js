@@ -4,9 +4,6 @@ let SDKAppID = 0;
 
 let SDKSECRETKEY = "";
 
-// push 客户端密钥
-let AppKey = "";
-
 /**
  * Expiration time for the signature, it is recommended not to set it too short.
  * Time unit: seconds
@@ -21,7 +18,6 @@ export function genTestUserSig(userID) {
 
   return {
     SDKAppID,
-    AppKey,
     userSig,
     userName,
   };

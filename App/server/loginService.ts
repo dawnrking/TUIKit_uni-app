@@ -1,6 +1,5 @@
 import { TUILogin } from '@tencentcloud/tui-core-lite';
 import { useLoginState } from "@/uni_modules/tuikit-atomic-x/state/LoginState";
-import { pushService } from "./pushService";
 import { genTestUserSig } from "@/debug/GenerateTestUserSig.js";
 import { DEFAULT_USER_NAMES, DEFAULT_AVATAR } from "./constants";
 import { ref } from "vue";
@@ -120,7 +119,6 @@ export const loginKit = async (params: { userId: string }): Promise<void> => {
     await loginChat(loginInfo);
     await loginCall(loginInfo);
     await loginAtomicx(loginInfo);
-    pushService.login(loginInfo);
     
     loginUserInfo.value = {
       apaasUserId: userId,

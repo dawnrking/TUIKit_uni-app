@@ -1,0 +1,212 @@
+<template>
+  <view class="application-verify">
+    <scroll-view class="application-verify__scroll" scroll-y="true">
+      <!-- 表单区域 -->
+      <view class="application-verify__form">
+        <!-- 验证信息 -->
+        <view class="application-verify__form-item">
+          <text class="application-verify__form-label">验证信息</text>
+          <input 
+            class="application-verify__form-input"
+            type="text"
+            v-model="verifyMessage"
+            :placeholder="defaultVerifyMessage"
+            :maxlength="100"
+          />
+        </view>
+
+        <!-- 分隔线 -->
+        <view class="application-verify__form-divider" v-if="props.type === 'friend'"/>
+
+        <!-- 备注 -->
+        <view class="application-verify__form-item" v-if="props.type === 'friend'">
+          <text class="application-verify__form-label">备注名</text>
+          <input 
+            class="application-verify__form-input"
+            type="text"
+            v-model="remark"
+            placeholder="请输入备注名"
+            :maxlength="50"
+          />
+        </view>
+      </view>
+
+      <!-- 发送按钮 -->
+      <view class="application-verify__action">
+        <view 
+          class="application-verify__action-btn"
+          :class="{ 'application-verify__action-btn--disabled': isSubmitting }"
+          @click="handleSubmit"
+        >
+          <text class="application-verify__action-btn-text">发送</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useGroupState, type GroupInfo } from '../../../state/GroupState'
+import { useContactState, type ContactInfo } from '../../../state/ContactState'
+import { useLoginState } from '../../../state/LoginState'
+import { showToast } from '../../../utils/toast'
+
+/** 申请类型 */
+type ApplicationType = 'friend' | 'group'
+
+interface ApplicationVerifyProps {
+  /** 申请类型：friend-添加好友，group-加入群组 */
+  type?: ApplicationType
+  /** 用户信息（添加好友时使用） */
+  userInfo?: ContactInfo | null
+  /** 群信息（加入群组时使用） */
+  groupInfo?: GroupInfo | null
+}
+
+interface ApplicationVerifyEmits {
+  (e: 'success', type: 'friend' | 'group', data: ContactInfo | GroupInfo): void
+  (e: 'fail', type: 'friend' | 'group', error: any): void
+}
+
+const props = withDefaults(defineProps<ApplicationVerifyProps>(), {
+  type: 'friend',
+  userInfo: null,
+  groupInfo: null
+})
+
+const emit = defineEmits<ApplicationVerifyEmits>()
+
+const { joinGroup } = useGroupState()
+const { addFriend } = useContactState()
+const { loginUserInfo } = useLoginState()
+
+// 默认验证信息
+const defaultVerifyMessage = computed(() => {
+  const nickname = loginUserInfo?.value?.nickname || loginUserInfo?.value?.userID || ''
+  return nickname ? `我是${nickname}` : '请输入验证信息'
+})
+
+const verifyMessage = ref('')
+const remark = ref('')
+const isSubmitting = ref(false)
+
+const handleSubmit = async () => {
+  if (isSubmitting.value) return
+  
+  if (props.type === 'group') {
+    await handleJoinGroup()
+  } else {
+    await handleAddFriend()
+  }
+}
+
+// 加入群组
+const handleJoinGroup = async () => {
+  if (!props.groupInfo?.groupID) return
+  
+  isSubmitting.value = true
+  try {
+    const message = verifyMessage.value.trim() || defaultVerifyMessage.value
+    await joinGroup(props.groupInfo.groupID, message)
+    showToast({ message: '已发送申请', type: 'success' })
+    emit('success', 'group', props.groupInfo)
+  } catch (error: any) {
+    showToast({ message: error.message || '发送失败', type: 'error' })
+    emit('fail', 'group', error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// 添加好友
+const handleAddFriend = async () => {
+  if (!props.userInfo?.userID) return
+  
+  isSubmitting.value = true
+  try {
+    const message = verifyMessage.value.trim() || defaultVerifyMessage.value
+    const res = await addFriend(props.userInfo.userID, remark.value.trim(), message)
+    let title = '添加好友成功';
+    if (res.code === 30539) {
+      title = '已发送申请';
+    }
+    showToast({ message: title, type: 'success' })
+    emit('success', 'friend', props.userInfo)
+  } catch (error: any) {
+    showToast({ message: error.message || '发送失败', type: 'error' })
+    emit('fail', 'friend', error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+</script>
+
+<style>
+.application-verify {
+  flex: 1;
+  background-color: #F0F2F7;
+}
+
+.application-verify__scroll {
+  flex: 1;
+}
+
+/* 表单区域 */
+.application-verify__form {
+  margin: 120rpx 32rpx 88rpx;
+  background-color: #FFFFFF;
+  border-radius: 32rpx;
+}
+
+.application-verify__form-item {
+  flex-direction: row;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.application-verify__form-label {
+  font-size: 32rpx;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.9);
+  line-height: 40rpx;
+  width: 160rpx;
+}
+
+.application-verify__form-input {
+  flex: 1;
+  font-size: 32rpx;
+  color: rgba(0, 0, 0, 0.9);
+  line-height: 40rpx;
+}
+
+.application-verify__form-divider {
+  height: 1rpx;
+  background-color: #E5E5E5;
+  margin-left: 0;
+}
+
+/* 发送按钮 */
+.application-verify__action {
+  padding: 0 75rpx;
+}
+
+.application-verify__action-btn {
+  background-color: #1C66E5;
+  border-radius: 48rpx;
+  padding: 26rpx 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.application-verify__action-btn--disabled {
+  opacity: 0.6;
+}
+
+.application-verify__action-btn-text {
+  font-size: 32rpx;
+  font-weight: 400;
+  color: #FFFFFF;
+  line-height: 44rpx;
+}
+</style>

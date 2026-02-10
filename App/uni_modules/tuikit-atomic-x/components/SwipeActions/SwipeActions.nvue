@@ -69,6 +69,7 @@ const screenWidth = ref(750)
 
 // 触摸相关状态
 const startX = ref(0)
+const startY = ref(0)
 const currentX = ref(0) // 0: 关闭, -actionsWidth: 展开
 const shouldPreventTap = ref(false)
 const preventTapTimerId = ref<number | null>(null)
@@ -178,6 +179,7 @@ const handleTouchStart = (e: any) => {
   
   const touch = e.touches[0]
   startX.value = touch.pageX
+  startY.value = touch.pageY
 }
 
 /**
@@ -195,6 +197,12 @@ const handleTouchEnd = (e: any) => {
   
   const touch = e.changedTouches[0]
   const deltaX = touch.pageX - startX.value
+  const deltaY = touch.pageY - startY.value
+  
+  // 如果垂直滑动距离大于水平滑动距离，认为是垂直滚动，忽略水平滑动
+  if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    return
+  }
   
   // 左滑超过阈值,展开操作按钮
   if (deltaX < -props.swipeThreshold) {

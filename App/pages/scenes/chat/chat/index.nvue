@@ -28,7 +28,6 @@
       v-if="conversationID"
       ref="messageInputRef"
       :conversationID="conversationID"
-      :toolList="customToolList"
       @height-change="onMessageInputHeightChange"
     />
   </view>
@@ -42,9 +41,6 @@ import MessageInput, { DEFAULT_TOOLS } from '@/uni_modules/tuikit-atomic-x/compo
 import CustomNavbar from '@/uni_modules/tuikit-atomic-x/components/CustomNavbar/CustomNavbar.nvue'
 import { useConversationListState } from '@/uni_modules/tuikit-atomic-x/state/ConversationListState'
 import { useGroupState } from '@/uni_modules/tuikit-atomic-x/state/GroupState'
-import { USER_PICKER_TYPE } from '@/uni_modules/tuikit-atomic-x/components/UserPicker/const'
-import voiceIcon from '@/static/icon/voice.png'
-import videoIcon from '@/static/icon/video.png'
 
 // ==================== State ====================
 const {
@@ -71,41 +67,7 @@ const currentConversation = computed(() =>
 
 const navigationTitle = computed(() => currentConversation.value?.title || '聊天')
 
-const customToolList = computed(() => [
-  ...DEFAULT_TOOLS,
-  { id: 'videoCall', name: '视频通话', icon: videoIcon, callback: () => startCall(2) },
-  { id: 'voiceCall', name: '语音通话', icon: voiceIcon, callback: () => startCall(1) },
-])
-
-// ==================== 通话功能 ====================
-const getPeerUserID = () => {
-  return isC2CConversation.value ? conversationID.value.replace('c2c_', '') : ''
-}
-
-const startCall = (mediaType: number) => {
-  if (isC2CConversation.value) {
-    uni.$TUICallKit.calls({
-      userIDList: [getPeerUserID()],
-      mediaType,
-    })
-  } else {
-    uni.navigateTo({
-      url: `/pages/scenes/chat/userPicker/userPicker?businessType=${USER_PICKER_TYPE.SELECT_GROUP_MEMBER}&conversationID=${conversationID.value}`,
-      events: {
-        onSelectGroupMember: (data) => {
-          const userIDList = data.selectedUsers.map(user => user.userID);
-          uni.$TUICallKit.calls({
-            callParams: {
-              chatGroupID: conversationID.value.replace('group_', ''),
-            },
-            userIDList,
-            mediaType: mediaType,
-          });
-        }
-      }
-    })
-  }
-}
+// const customToolList = computed(() => DEFAULT_TOOLS.filter(tool => tool.id !== 'videoCall' && tool.id !== 'voiceCall'))
 
 // ==================== 导航栏 ====================
 const onNavBack = () => uni.navigateBack()

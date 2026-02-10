@@ -13,7 +13,7 @@ declare const uni: any
  */
 export function useCreateGroup(_routeParams?: any): UserPickerHookResult {
   // ======================== 数据源 ========================
-  const { friendList, destroyStore } = useContactState()
+  const { friendList, destroyStore } = useContactState('createGroup')
   
   // ======================== 响应式状态 ========================
   

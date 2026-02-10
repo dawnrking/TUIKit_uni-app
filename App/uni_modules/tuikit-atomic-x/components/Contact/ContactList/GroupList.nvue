@@ -1,0 +1,174 @@
+<template>
+  <view class="group-list">
+    <list class="group-list__scroll" :show-scrollbar="false">
+      <cell v-if="joinedGroupList.length === 0" key="empty">
+        <view class="group-list__placeholder">
+          <component v-if="PlaceholderEmptyList" :is="PlaceholderEmptyList" text="暂无群组" />
+        </view>
+      </cell>
+
+      <template v-else v-for="section in groupedGroupList" :key="section.letter">
+        <cell>
+          <view class="group-list__index">
+            <text class="group-list__index-text">{{ section.letter }}</text>
+          </view>
+        </cell>
+        
+        <cell v-for="group in section.groups" :key="group.groupID">
+          <view 
+            class="group-list__item"
+            @click="handleGroupClick(group)"
+          >
+            <component 
+              :is="Avatar"
+              :src="group.avatarURL || ''"
+              :name="group.groupName || group.groupID"
+              :size="80"
+              shape="square"
+              :defaultAvatarType="group.groupType.toLowerCase()"
+              pureMode
+            />
+            <view class="group-list__item-content">
+              <view class="group-list__item-info">
+                <text class="group-list__item-name" :numberOfLines="1">{{ group.groupName || group.groupID }}</text>
+              </view>
+            </view>
+          </view>
+        </cell>
+      </template>
+    </list>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import AvatarComponent from '../../Avatar'
+import DefaultEmptyList from '../placeholders/EmptyList.nvue'
+import DefaultLoading from '../placeholders/Loading.nvue'
+import { useGroupState } from '../../../state/GroupState'
+import { sortByFirstChar } from '../../../utils/sortByFirstChar'
+import type { GroupInfo } from '../../../types/group'
+
+import { onShow } from '@dcloudio/uni-app'
+
+interface GroupListProps {
+  Avatar?: any
+  PlaceholderEmptyList?: any
+  PlaceholderLoading?: any
+}
+
+interface GroupListEmits {
+  (e: 'groupSelect', group: GroupInfo): void
+}
+
+const props = withDefaults(defineProps<GroupListProps>(), {
+  Avatar: () => AvatarComponent,
+  PlaceholderEmptyList: () => DefaultEmptyList,
+  PlaceholderLoading: () => DefaultLoading
+})
+
+const emit = defineEmits<GroupListEmits>()
+
+const { fetchJoinedGroupList, joinedGroupList } = useGroupState()
+
+const selectedGroupID = ref<string>('')
+
+const groupedGroupList = computed(() => {
+  const { groupedList } = sortByFirstChar(
+    joinedGroupList.value,
+    (item: GroupInfo) => item.groupName || item.groupID || ''
+  )
+  
+  const letters = Object.keys(groupedList).sort((a, b) => {
+    if (a === '#') return 1
+    if (b === '#') return -1
+    return a.localeCompare(b)
+  })
+  
+  return letters.map(letter => ({
+    letter,
+    groups: groupedList[letter]
+  }))
+})
+
+const handleGroupClick = (group: GroupInfo) => {
+  selectedGroupID.value = group.groupID
+  emit('groupSelect', group)
+}
+
+onMounted(async () => {
+  await fetchJoinedGroupList()
+})
+
+// 页面显示时刷新数据
+onShow(async () => {
+  await fetchJoinedGroupList()
+})
+</script>
+
+<style>
+.group-list {
+  flex: 1;
+  background-color: #FFFFFF;
+}
+
+.group-list__scroll {
+  flex: 1;
+}
+
+.group-list__placeholder {
+  padding-top: 100rpx;
+  padding-bottom: 100rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 字母索引 */
+.group-list__index {
+  flex-direction: row;
+  align-items: center;
+  padding: 12rpx 32rpx;
+  background-color: #F0F2F7;
+}
+
+.group-list__index-text {
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.4);
+  font-weight: 400;
+  line-height: 40rpx;
+}
+
+/* 群组项 */
+.group-list__item {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 32rpx;
+  background-color: #FFFFFF;
+}
+
+.group-list__item-content {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 24rpx;
+  padding: 36rpx 0;
+  border-bottom: 1rpx solid #DBDBDB;
+}
+
+.group-list__item-info {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+}
+
+.group-list__item-name {
+  flex: 1;
+  font-size: 36rpx;
+  font-weight: 400;
+  line-height: 48rpx;
+  color: #111111;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+</style>

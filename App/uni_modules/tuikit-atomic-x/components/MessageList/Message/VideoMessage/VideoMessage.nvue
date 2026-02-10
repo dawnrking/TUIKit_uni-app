@@ -150,25 +150,25 @@ const handleCoverError = () => {
 }
 
 const handlePlayTap = async () => {
-  // const url = videoUrl.value
-  // const poster = videoSnapshotUrl.value
+  const url = videoUrl.value
+  const poster = videoSnapshotUrl.value
   
-  // if (!url) {
-  //   uni.showToast({ title: '视频地址无效', icon: 'none' });
-  //   return;
-  // }
+  if (!url) {
+    uni.showToast({ title: '视频地址无效', icon: 'none' });
+    return;
+  }
 
-  // try {
-  //   await checkAndDownloadVideo();
-  //   // 使用 encodeURIComponent 编码参数，避免特殊字符问题
-  //   const params = [
-  //     `url=${encodeURIComponent(url)}`,
-  //   ].join('&');
+  try {
+    await checkAndDownloadVideo();
+    // 使用 encodeURIComponent 编码参数，避免特殊字符问题
+    const params = [
+      `url=${encodeURIComponent(url)}`,
+    ].join('&');
     
-  //   uni.navigateTo({
-  //     url: `/pages/scenes/chat/videoPlayer/videoPlayer?${params}`
-  //   });
-  // } catch {}
+    uni.navigateTo({
+      url: `/pages/scenes/chat/videoPlayer/videoPlayer?${params}`
+    });
+  } catch {}
 }
 
 // 检查并下载视频封面资源

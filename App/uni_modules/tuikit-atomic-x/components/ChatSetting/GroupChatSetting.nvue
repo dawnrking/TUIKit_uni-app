@@ -26,6 +26,18 @@
         </view>
       </view>
 
+      <!-- 群ID区 -->
+      <view class="group-id-section">
+        <text class="group-id-section__label">群ID</text>
+        <view class="group-id-section__row" @tap="handleCopyGroupID">
+          <text class="group-id-section__value">{{ groupID }}</text>
+          <image
+            class="group-name-section__edit"
+            :src="copyIcon"
+          />
+        </view>
+      </view>
+
       <!-- 分隔区 -->
       <view class="section-gap"></view>
 
@@ -148,6 +160,13 @@
         @click="handleQuitClick"
       />
 
+      <!-- 清除聊天记录 -->
+      <SettingRowButton
+        label="清除聊天记录"
+        color="#FF3B30"
+        @click="handleClearMessageClick"
+      />
+
       <!-- 底部安全区 -->
       <view class="safe-area-bottom"></view>
     </scroll-view>
@@ -218,6 +237,16 @@
       @confirm="handleDismissConfirm"
       @cancel="handleDismissCancel"
     />
+
+    <!-- 清除聊天记录确认弹窗 -->
+    <ConfirmDialog
+      v-model:visible="showClearMessageConfirm"
+      title="确定清除聊天记录？"
+      description="清除后将无法恢复"
+      confirmText="确定清除"
+      @confirm="handleClearMessageConfirm"
+      @cancel="handleClearMessageCancel"
+    />
   </view>
 </template>
 
@@ -245,8 +274,10 @@ import { useConversationListState } from '../../state/ConversationListState';
 import { hasPermission, showGroupManagement, GroupPermission } from './utils/groupPermission';
 import { UserPickerType } from '../../types/userpicker';
 import { throttle } from '../../utils/lodash';
+import { setClipboardText } from '../../utils/clipboard';
 import editIcon from './assets/nvue_edit.png';
 import arrowRightIcon from './assets/nvue_arrow-right.png';
+import copyIcon from './assets/nvue_file-copy.png';
 import type { GroupInfo, GroupMember } from '../../types/group';
 
 interface Props {
@@ -265,7 +296,8 @@ const groupID = props.conversationID.startsWith('group_') ? props.conversationID
 const {
   conversationList,
   pinConversation,
-  fetchConversationInfo
+  fetchConversationInfo,
+  clearConversationMessages
 } = useConversationListState('groupSetting');
 // 获取群基础信息
 const {
@@ -325,6 +357,7 @@ const showInviteOptionSheet = ref(false);
 const showQuitConfirm = ref(false);
 const showDismissConfirm = ref(false);
 const showNoticePopup = ref(false);
+const showClearMessageConfirm = ref(false);
 
 // ActionSheet 选项
 const joinOptions: ActionSheetOption[] = [
@@ -490,6 +523,16 @@ const handleEditGroupName = () => {
   }
 };
 
+// 复制群ID
+const handleCopyGroupID = () => {
+  try {
+    setClipboardText(groupID);
+    plus.nativeUI.toast('已复制', { verticalAlign: 'top' });
+  } catch (error) {
+    plus.nativeUI.toast('复制失败', { verticalAlign: 'top' });
+  }
+};
+
 // 确认修改群名称
 const handleGroupNameConfirm = async (newName: string) => {
   const newGroupName = newName.trim();
@@ -530,6 +573,7 @@ const handleRemoveMember = () => {
 // 点击成员
 const handleMemberClick = (member: GroupMember) => {
   // TODO: 跳转到成员详情页面
+  // console.log('[TODO] 跳转到成员详情页面', member.userID);
 };
 
 // 点击群公告
@@ -647,6 +691,21 @@ const handleDismissConfirm = () => {
     uni.navigateBack({ delta: 2 });
   });
 };
+
+// 点击清除聊天记录
+const handleClearMessageClick = () => {
+  showClearMessageConfirm.value = true;
+};
+
+// 确认清除聊天记录
+const handleClearMessageConfirm = async (event) => {
+  try {
+    await clearConversationMessages(props.conversationID);
+    plus.nativeUI.toast('已清除', { verticalAlign: 'top' });
+  } catch (error) {
+    plus.nativeUI.toast('清除失败', { verticalAlign: 'top' });
+  }
+};
 </script>
 
 <style scoped>
@@ -704,6 +763,36 @@ const handleDismissConfirm = () => {
   width: 28rpx;
   height: 28rpx;
   margin-left: 12rpx;
+}
+
+/* 群ID区 */
+.group-id-section {
+  background-color: #FFFFFF;
+  padding: 24rpx 32rpx;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-top-width: 1rpx;
+  border-top-style: solid;
+  border-top-color: #F0F2F7;
+}
+
+.group-id-section__label {
+  font-size: 32rpx;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.group-id-section__row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.group-id-section__value {
+  font-size: 32rpx;
+  color: rgba(0, 0, 0, 0.9);
+  lines: 1;
+  text-overflow: ellipsis;
+  max-width: 360rpx;
 }
 
 /* 群成员区 */

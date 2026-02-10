@@ -1,0 +1,134 @@
+<template>
+  <view class="add-friend-info">
+    <scroll-view class="add-friend-info__scroll" scroll-y="true">
+      <!-- 用户信息区 -->
+      <view class="add-friend-info__header">
+        <component 
+          :is="Avatar"
+          :src="userInfo?.avatarURL || ''"
+          :name="userInfo?.nickname || userInfo?.userID || ''"
+          :size="96"
+          shape="square"
+          defaultAvatarType="user"
+          pureMode
+        />
+        <view class="add-friend-info__header-content">
+          <text class="add-friend-info__name" :numberOfLines="1">{{ userInfo?.nickname || userInfo?.userID }}</text>
+          <text class="add-friend-info__id" :numberOfLines="1">ID：{{ userInfo?.userID }}</text>
+          <text v-if="userInfo?.signature" class="add-friend-info__signature" :numberOfLines="2">个性签名：{{ userInfo.signature }}</text>
+        </view>
+      </view>
+
+      <!-- 添加好友按钮 -->
+      <view v-if="!userInfo?.isFriend" class="add-friend-info__action" @click="handleAddFriend">
+        <text class="add-friend-info__action-text">添加好友</text>
+      </view>
+
+      <!-- 已是好友 - 发消息 -->
+      <view v-else class="add-friend-info__action" @click="handleSendMessage">
+        <text class="add-friend-info__action-text">发送消息</text>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import AvatarComponent from '../../Avatar'
+import type { ContactInfo } from '../../../types/contact'
+
+interface AddFriendInfoProps {
+  userInfo?: ContactInfo | null
+  Avatar?: any
+}
+
+interface AddFriendInfoEmits {
+  (e: 'addFriend', userInfo: ContactInfo): void
+}
+
+const props = withDefaults(defineProps<AddFriendInfoProps>(), {
+  userInfo: null,
+  Avatar: () => AvatarComponent
+})
+
+const emit = defineEmits<AddFriendInfoEmits>()
+
+const handleAddFriend = () => {
+  if (!props.userInfo?.userID) return
+  emit('addFriend', props.userInfo)
+}
+
+const handleSendMessage = () => {
+  if (props.userInfo?.userID) {
+    emit('sendMessage', props.userInfo.userID)
+  }
+}
+</script>
+
+<style>
+.add-friend-info {
+  flex: 1;
+  background-color: #F2F3F5;
+}
+
+.add-friend-info__scroll {
+  flex: 1;
+}
+
+/* 用户信息区 */
+.add-friend-info__header {
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 24rpx 32rpx;
+  background-color: #FFFFFF;
+}
+
+.add-friend-info__header-content {
+  flex: 1;
+  margin-left: 24rpx;
+}
+
+.add-friend-info__name {
+  font-size: 36rpx;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.9);
+  line-height: 48rpx;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.add-friend-info__id {
+  font-size: 26rpx;
+  font-weight: 400;
+  color:rgba(0, 0, 0, 0.4);
+  line-height: 40rpx;
+  margin-top: 8rpx;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.add-friend-info__signature {
+  font-size: 26rpx;
+  font-weight: 400;
+  color:rgba(0, 0, 0, 0.4);
+  line-height: 40rpx;
+  margin-top: 4rpx;
+  lines: 2;
+  text-overflow: ellipsis;
+}
+
+/* 操作按钮 */
+.add-friend-info__action {
+  margin-top: 20rpx;
+  padding: 30rpx 0;
+  background-color: #FFFFFF;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-friend-info__action-text {
+  font-size: 34rpx;
+  font-weight: 400;
+  line-height: 52rpx;
+  color: #1C66E5;
+}
+</style>

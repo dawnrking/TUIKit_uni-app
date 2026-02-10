@@ -4,28 +4,17 @@
  */
 import { ref, type Ref } from "vue";
 import type { HybridCallOptions } from "@/uni_modules/tuikit-atomic-x";
+import { callAPI, addListener, removeListener } from "@/uni_modules/tuikit-atomic-x";
 import { safeJsonParse } from "../utils/utsUtils";
 import type {
   ContactInfo,
   FriendApplicationInfo
 } from "../types/contact";
-import { callAPI, addListener, removeListener } from "@/uni_modules/tuikit-atomic-x";
+import {
+  ReceiveMessageOpt
+} from "../types/contact";
 
 import type { HybridResponseData } from "../types/hybridService";
-
-/** 消息接收选项 */
-export enum ReceiveMessageOpt {
-  /** 接收消息 */
-  RECEIVE = "RECEIVE",
-  /** 不接收消息 */
-  NOT_RECEIVE = "NOT_RECEIVE",
-  /** 不通知 */
-  NOT_NOTIFY = "NOT_NOTIFY",
-  /** 不通知（除了@消息） */
-  NOT_NOTIFY_EXCEPT_MENTION = "NOT_NOTIFY_EXCEPT_MENTION",
-  /** 不接收（除了@消息） */
-  NOT_RECEIVE_EXCEPT_MENTION = "NOT_RECEIVE_EXCEPT_MENTION"
-}
 
 /**
  * 获取全局 InstanceMap
@@ -352,8 +341,8 @@ class ContactState {
           const result = safeJsonParse<any>(response, {});
           console.log(`[${this.instanceId}][addFriend] Response:`, result);
 
-          if (result.code === 0) {
-            resolve();
+          if (result.code === 0 || result.code === 30539) {
+            resolve(result);
           } else {
             console.error(`[${this.instanceId}][addFriend] Failed:`, result.message);
             reject(new Error(result.message || 'Failed to add friend'));
@@ -506,16 +495,16 @@ class ContactState {
 
   /**
    * 同意好友申请
-   * @param applicationID 申请ID
+   * @param application 申请信息
    * @returns {Promise<void>}
    */
-  acceptFriendApplication = async (applicationID: string): Promise<void> => {
+  acceptFriendApplication = async (application: FriendApplicationInfo): Promise<void> => {
     return new Promise((resolve, reject) => {
       const options: HybridCallOptions = {
         api: "acceptFriendApplication",
         params: {
           createStoreParams: this.instanceId,
-          applicationID
+          info: JSON.stringify(application)
         }
       };
 
@@ -540,16 +529,16 @@ class ContactState {
 
   /**
    * 拒绝好友申请
-   * @param applicationID 申请ID
+   * @param application 申请信息
    * @returns {Promise<void>}
    */
-  refuseFriendApplication = async (applicationID: string): Promise<void> => {
+  refuseFriendApplication = async (application: FriendApplicationInfo): Promise<void> => {
     return new Promise((resolve, reject) => {
       const options: HybridCallOptions = {
         api: "refuseFriendApplication",
         params: {
           createStoreParams: this.instanceId,
-          applicationID
+          info: JSON.stringify(application)
         }
       };
 

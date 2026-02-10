@@ -1,6 +1,7 @@
 import { MessageInfo, MessageStatus, MessageType } from "../../types/message";
 import { parseEmojiToNodes, type RichTextNode } from "../../utils/emojiUtils";
 import { emojiUrlMap, emojiBaseUrl } from "../../constants/emoji";
+import { isCallMessage, parseCallMessageData, isVideoCall } from "../../utils/callMessageUtils";
 
 export type { RichTextNode } from "../../utils/emojiUtils";
 
@@ -197,7 +198,13 @@ const getMessageAbstract = (message: MessageInfo): string => {
       break;
       
     case MessageType.CUSTOM:
-      messageContent = messageBody?.customMessage?.description || '[自定义消息]'
+      // 判断是否为通话消息
+      if (isCallMessage(message)) {
+        const callData = parseCallMessageData(message)
+        messageContent = isVideoCall(callData) ? '[视频通话]' : '[语音通话]'
+      } else {
+        messageContent = messageBody?.customMessage?.description || '[自定义消息]'
+      }
       break;
       
     case MessageType.MERGED:
@@ -212,7 +219,7 @@ const getMessageAbstract = (message: MessageInfo): string => {
       messageContent = '[未知消息]'
   }
 
-  if (message.groupID && message.messageType !== MessageType.SYSTEM) {
+  if (message.groupID && message.messageType !== MessageType.SYSTEM && !isCallMessage(message)) {
     const senderName = getSenderName(message);
     return senderName ? `${senderName}: ${messageContent}` : messageContent;
   }

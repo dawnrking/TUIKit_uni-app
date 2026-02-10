@@ -8,15 +8,19 @@ import {
   MessageMediaFileType,
   MessageListType,
   MessageFilterType,
+  MessageType,
 } from '../types/message'
 import type {
   MessageInfo,
   MessageFetchOption,
   MessageForwardOption,
 } from '../types/message'
+
 import type { HybridCallOptions } from '../utssdk/interface.uts'
 import { callAPI, addListener, removeListener } from "@/uni_modules/tuikit-atomic-x";
 import { safeJsonParse } from '../utils/utsUtils';
+import { useLoginState } from './LoginState';
+import { useContactState } from './ContactState';
 
 /**
  * 获取全局 InstanceMap
@@ -40,6 +44,9 @@ const InstanceMap = getGlobalInstanceMap();
 
 const downloadingMsgIDs: Set<string> = new Set();
 
+const { getLoginUserInfo } = useLoginState();
+const { fetchUserInfo } = useContactState('MessageListState');
+
 /**
  * 消息列表状态管理类
  */
@@ -62,6 +69,9 @@ class MessageListState {
   /** 是否有更新的消息 */
   public readonly hasMoreNewerMessage: Ref<boolean>;
 
+  /** C2C 会话对方用户信息（用于 Callkit 消息翻转） */
+  private peerUserInfo: { userID: string; avatarURL?: string; nickname?: string } | null = null;
+
   /**
    * 私有构造函数，使用 getInstance 获取实例
    * @param instanceId Store 实例ID
@@ -79,6 +89,37 @@ class MessageListState {
     
     // 初始化 Store
     this.createStore();
+    // C2C 会话预先获取对方用户信息
+    this.fetchPeerUserInfo();
+  }
+
+  /**
+   * 预先获取 C2C 会话对方用户信息
+   */
+  private async fetchPeerUserInfo(): Promise<void> {
+    // 仅处理 C2C 会话
+    if (!this.conversationID.startsWith('c2c_')) {
+      return;
+    }
+
+    const peerUserID = this.conversationID.replace('c2c_', '');
+    
+    try {
+      const userInfoList = await fetchUserInfo([peerUserID]);
+      if (userInfoList && userInfoList.length > 0) {
+        const peerInfo = userInfoList[0];
+        this.peerUserInfo = {
+          userID: peerUserID,
+          avatarURL: peerInfo.avatarURL,
+          nickname: peerInfo.nickname,
+        };
+        console.log(`[${this.instanceId}][fetchPeerUserInfo] Success:`, this.peerUserInfo);
+      }
+    } catch (e) {
+      console.warn(`[${this.instanceId}][fetchPeerUserInfo] Failed:`, e);
+      // 失败时使用默认值
+      this.peerUserInfo = { userID: peerUserID };
+    }
   }
 
   private createStore() {
@@ -156,8 +197,9 @@ class MessageListState {
     }, (data: string) => {
       try {
         const result = safeJsonParse(data, {}) as any;
-        const list = safeJsonParse(result.messageList, []);
-        this.messageList.value = list;
+        const list = safeJsonParse(result.messageList, []) as MessageInfo[];
+        // 处理 C2C Callkit 消息翻转
+        this.messageList.value = this.handleC2CCallSignaling(list);
       } catch (error) {
         console.error(`[${this.instanceId}][messageList listener] Error:`, error)
       }
@@ -204,6 +246,132 @@ class MessageListState {
         console.error(`[${this.instanceId}][hasMoreNewerMessage listener] Error:`, error)
       }
     })
+  }
+
+  /**
+   * 处理 C2C 会话中的 Callkit 消息翻转
+   * 根据通话发起者调整消息的发送方向，确保消息在正确的一侧显示
+   * @param messageList 原始消息列表
+   * @returns 处理后的消息列表
+   */
+  private handleC2CCallSignaling(messageList: MessageInfo[]): MessageInfo[] {
+    // 仅处理 C2C 会话
+    if (!this.conversationID.startsWith('c2c_')) {
+      return messageList;
+    }
+
+    const loginUser = getLoginUserInfo();
+    const myUserID = loginUser?.userID;
+    
+    if (!myUserID) {
+      return messageList;
+    }
+
+    // 获取当前登录用户的完整信息
+    const myUserInfo = {
+      userID: myUserID,
+      avatarURL: loginUser?.avatarURL,
+      nickname: loginUser?.nickname,
+    };
+
+    // 使用缓存的对方用户信息，如果未获取到则使用默认值
+    const peerUserID = this.conversationID.replace('c2c_', '');
+    const peerUserInfo = this.peerUserInfo || { userID: peerUserID };
+
+    const result: MessageInfo[] = [];
+
+    for (const message of messageList) {
+      // 仅处理自定义消息类型
+      if (message.messageType !== MessageType.CUSTOM) {
+        result.push(message);
+        continue;
+      }
+
+      const customData = message.messageBody?.customMessage?.data;
+      if (!customData) {
+        result.push(message);
+        continue;
+      }
+
+      try {
+        const callSignaling = safeJsonParse<any>(customData.toString(), null);
+        
+        if (callSignaling?.businessID !== 1) {
+          result.push(message);
+          continue;
+        }
+
+        const innerData = safeJsonParse<any>(callSignaling.data, null);
+        
+        // 检查消息是否需要在聊天中显示
+        const rawMessage = message.rawMessage;
+        const isExcludedFromUnreadCount = rawMessage?._isExcludedFromUnreadCount ?? rawMessage?.isExcludedFromUnreadCount;
+        const isExcludedFromLastMessage = rawMessage?._isExcludedFromLastMessage ?? rawMessage?.isExcludedFromLastMessage;
+        const isDisplayInChat = !(isExcludedFromUnreadCount && isExcludedFromLastMessage);
+
+        if (!isDisplayInChat) {
+          result.push(message);
+          continue;
+        }
+
+        // 检查通话是否已被消费（已处理）
+        if (innerData?.data?.consumed === true) {
+          result.push(message);
+          continue;
+        }
+
+        // 确定通话发起者（转换为基元 string 类型以避免 String 包装器对象比较问题）
+        let inviter: string | undefined = innerData?.data?.inviter?.toString();
+        // 处理忙线情况
+        if (innerData?.line_busy === 'line_busy' || innerData?.data?.message === 'lineBusy') {
+          inviter = callSignaling.inviter?.toString();
+        }
+
+        if (!inviter) {
+          result.push(message);
+          continue;
+        }
+
+        // 深拷贝消息进行修改
+        const copiedMessage: MessageInfo = JSON.parse(JSON.stringify(message));
+
+        // 消息翻转逻辑：
+        // 1. 当前用户不是发起者，但消息显示为自己发送 -> 翻转为对方发送
+        // 2. 当前用户是发起者，但消息显示为对方发送 -> 翻转为自己发送
+        if (inviter !== myUserID && copiedMessage.isSelf) {
+          // 当前用户不是发起者，消息应该显示为对方发送（来电）
+          copiedMessage.isSelf = false;
+          // 交换 sender 和 receiver（包括头像和昵称）
+          if (copiedMessage.receiver) {
+            // 将 sender 设置为对方
+            copiedMessage.sender.userID = peerUserInfo.userID;
+            copiedMessage.sender.avatarURL = peerUserInfo.avatarURL;
+            copiedMessage.sender.nickname = peerUserInfo.nickname;
+            // 将 receiver 设置为当前用户
+            copiedMessage.receiver = myUserInfo.userID;
+          }
+        } else if (inviter === myUserID && !copiedMessage.isSelf) {
+          // 当前用户是发起者，消息应该显示为自己发送（呼出）
+          copiedMessage.isSelf = true;
+          // 交换 sender 和 receiver（包括头像和昵称）
+          if (copiedMessage.receiver) {
+            // 将 sender 设置为当前用户
+            copiedMessage.sender.userID = myUserInfo.userID;
+            copiedMessage.sender.avatarURL = myUserInfo.avatarURL;
+            copiedMessage.sender.nickname = myUserInfo.nickname;
+            // 将 receiver 设置为对方
+            copiedMessage.receiver = peerUserInfo.userID;
+          }
+        }
+
+        result.push(copiedMessage);
+      } catch (e) {
+        // 解析失败，保持原消息
+        result.push(message);
+      }
+    }
+
+    return result;
   }
 
   /**

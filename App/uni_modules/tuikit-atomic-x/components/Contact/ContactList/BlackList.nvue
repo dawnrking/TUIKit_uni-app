@@ -1,0 +1,174 @@
+<template>
+  <view class="black-list">
+    <list class="black-list__scroll" :show-scrollbar="false">
+      <cell v-if="isLoading" key="loading">
+        <view class="black-list__placeholder">
+          <component v-if="PlaceholderLoading" :is="PlaceholderLoading" />
+        </view>
+      </cell>
+
+      <cell v-else-if="blackList.length === 0" key="empty">
+        <view class="black-list__placeholder">
+          <component v-if="PlaceholderEmptyList" :is="PlaceholderEmptyList" text="暂无黑名单" />
+        </view>
+      </cell>
+
+      <template v-else>
+        <cell v-for="user in blackList" :key="user.userID">
+          <SwipeActions
+            :ref="(el: any) => setSwipeRef(user.userID, el)"
+            :actionsWidth="150"
+            @contentTap="handleUserClick(user)"
+            @open="handleSwipeOpen(user.userID)"
+          >
+            <view class="black-list__item">
+              <component 
+                :is="Avatar"
+                :src="user.avatarURL || ''"
+                :name="user.nickname || user.userID || ''"
+                :size="80"
+                shape="square"
+                defaultAvatarType="user"
+                pureMode
+              />
+              <view class="black-list__item-content">
+                <text class="black-list__item-name" :numberOfLines="1">{{ user.nickname || user.userID }}</text>
+              </view>
+            </view>
+            <template #actions>
+              <view class="black-list__action" @click="handleRemove(user)">
+                <text class="black-list__action-text">移出</text>
+              </view>
+            </template>
+          </SwipeActions>
+        </cell>
+      </template>
+    </list>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import AvatarComponent from '../../Avatar'
+import SwipeActions from '../../SwipeActions/SwipeActions.nvue'
+import DefaultEmptyList from '../placeholders/EmptyList.nvue'
+import DefaultLoading from '../placeholders/Loading.nvue'
+import { useContactState } from '../../../state/ContactState'
+import type { ContactInfo } from '../../../types/contact'
+import { showToast } from '../../../utils/toast'
+
+interface BlackListProps {
+  Avatar?: any
+  PlaceholderEmptyList?: any
+  PlaceholderLoading?: any
+}
+
+interface BlackListEmits {
+  (e: 'userClick', user: ContactInfo): void
+  (e: 'remove', user: ContactInfo): void
+}
+
+const props = withDefaults(defineProps<BlackListProps>(), {
+  Avatar: () => AvatarComponent,
+  PlaceholderEmptyList: () => DefaultEmptyList,
+  PlaceholderLoading: () => DefaultLoading
+})
+
+const emit = defineEmits<BlackListEmits>()
+
+const { blackList, removeFromBlacklist } = useContactState()
+
+const isLoading = ref(false)
+
+// SwipeActions refs
+const swipeRefs: Record<string, any> = {}
+const currentOpenUserID = ref<string>('')
+
+const setSwipeRef = (userID: string, el: any) => {
+  if (el) {
+    swipeRefs[userID] = el
+  }
+}
+
+const handleSwipeOpen = (userID: string) => {
+  // 关闭其他已打开的项
+  if (currentOpenUserID.value && currentOpenUserID.value !== userID) {
+    swipeRefs[currentOpenUserID.value]?.close()
+  }
+  currentOpenUserID.value = userID
+}
+
+const handleUserClick = (user: ContactInfo) => {
+  emit('userClick', user)
+}
+
+const handleRemove = async (user: ContactInfo) => {
+  if (!user.userID) return
+  try {
+    await removeFromBlacklist(user.userID)
+    // 移除成功后清理ref
+    delete swipeRefs[user.userID]
+    showToast({ message: '已移出', type: 'success' })
+    emit('remove', user)
+  } catch (error: any) {
+    showToast({ message: error.message || '操作失败', type: 'error' })
+  }
+}
+</script>
+
+<style>
+.black-list {
+  flex: 1;
+  background-color: #FFFFFF;
+}
+
+.black-list__scroll {
+  flex: 1;
+}
+
+.black-list__placeholder {
+  padding-top: 100rpx;
+  padding-bottom: 100rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.black-list__item {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 32rpx;
+  background-color: #FFFFFF;
+}
+
+.black-list__item-content {
+  flex: 1;
+  margin-left: 24rpx;
+  padding: 36rpx 0;
+  border-bottom: 1rpx solid #E6E9F0;
+}
+
+.black-list__item-name {
+  flex: 1;
+  font-size: 36rpx;
+  font-weight: 400;
+  line-height: 48rpx;
+  color: #111111;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.black-list__action {
+  flex: 1;
+  width: 160rpx;
+  background-color: #E54545;
+  justify-content: center;
+  align-items: center;
+}
+
+.black-list__action-text {
+  font-size: 36rpx;
+  font-weight: 400;
+  line-height: 48rpx;
+  color: #FFFFFF;
+}
+</style>

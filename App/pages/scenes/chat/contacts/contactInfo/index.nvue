@@ -1,0 +1,187 @@
+<template>
+	<view class="contact-info-page">
+		<CustomNavbar :title="navTitle" :showBack="true" @back="handleBack" />
+
+		<!-- 页面内容 -->
+		<view class="page-content">
+			<!-- 联系人详情组件 -->
+			<ContactInfo 
+				:type="type"
+				:userInfo="userInfo"
+				:friendInfo="friendInfo"
+				:friendApplication="friendApplication"
+				:canAddFriend="canAddFriend"
+				:friendInfoActions="friendInfoActions"
+				@addFriend="handleAddFriend"
+				@acceptFriend="handleAcceptFriend"
+				@rejectFriend="handleRejectFriend"
+				@sendMessage="handleSendMessage"
+				@remarkEdit="handleRemarkChange"
+				@deleteFriend="handleDeleteFriend"
+				@muteChange="handleMuteChange"
+				@pinChange="handlePinChange"
+				@blacklistChange="handleBlacklistChange"
+			/>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import ContactInfo from '@/uni_modules/tuikit-atomic-x/components/Contact/ContactInfo'
+import CustomNavbar from '@/uni_modules/tuikit-atomic-x/components/CustomNavbar/CustomNavbar.nvue'
+import type { ContactInfoType, FriendInfoAction } from '@/uni_modules/tuikit-atomic-x/components/Contact'
+import type { FriendApplicationInfo, ContactInfo as ContactInfoData } from '@/uni_modules/tuikit-atomic-x/types/contact'
+
+interface UserInfo {
+	userID: string
+	nickname?: string
+	avatarURL?: string
+	signature?: string
+	isFriend?: boolean
+	allowType?: number
+}
+
+const type = ref<ContactInfoType | undefined>(undefined)
+const userInfo = ref<UserInfo | null>(null)
+const friendInfo = ref<ContactInfoData | null>(null)
+const friendApplication = ref<FriendApplicationInfo | null>(null)
+const canAddFriend = ref(true)
+
+// 自定义 FriendInfo 操作按钮
+const friendInfoActions: FriendInfoAction[] = [
+	{
+		key: 'sendMessage',
+		label: '发送消息'
+	},
+	{
+		key: 'voiceCall',
+		label: '语音通话',
+		click: (userID: string) => {
+			uni.$TUICallKit.calls({
+				userIDList: [userID],
+				mediaType: 1 // 1: 语音通话
+			})
+		}
+	},
+	{
+		key: 'videoCall',
+		label: '视频通话',
+		click: (userID: string) => {
+			uni.$TUICallKit.calls({
+				userIDList: [userID],
+				mediaType: 2 // 2: 视频通话
+			})
+		}
+	},
+	{
+		key: 'deleteFriend',
+		label: '删除好友',
+		color: '#FF584C'
+	}
+]
+
+const navTitle = computed(() => {
+	switch (type.value) {
+		case 'addFriend':
+			return '添加好友'
+		case 'newContact':
+			return '新的联系人'
+		case 'friend':
+			return '好友详情'
+		default:
+			return '联系人详情'
+	}
+})
+
+onLoad((options: any) => {
+	if (options.type) {
+		type.value = options.type as ContactInfoType
+	}
+
+	const pages = getCurrentPages()
+	const currentPage = pages[pages.length - 1]
+	const eventChannel = (currentPage as any).getOpenerEventChannel?.()
+	if (eventChannel) {
+		eventChannel.on('infoData', (data: any) => {
+			if (data.userInfo) {
+				userInfo.value = data.userInfo
+			}
+			if (data.friendInfo) {
+				friendInfo.value = data.friendInfo
+			}
+			if (data?.applicationInfo?.application?.friendApplication) {
+				friendApplication.value = data.applicationInfo
+			}
+		})
+	}
+})
+
+const handleBack = () => {
+	uni.navigateBack({ delta: 1 })
+}
+
+const handleAddFriend = (user: UserInfo) => {
+	uni.navigateTo({
+		url: '/pages/scenes/chat/contacts/applicationVerify/index?type=friend',
+		success: (res) => {
+			res.eventChannel.emit('verifyData', {
+				type: 'friend',
+				userInfo: user
+			})
+		}
+	})
+}
+
+const handleAcceptFriend = (application: FriendApplicationInfo) => {
+	uni.navigateBack({ delta: 2 })
+}
+
+const handleRejectFriend = (application: FriendApplicationInfo) => {
+	uni.navigateBack({ delta: 2 })
+}
+
+const handleSendMessage = (userID: string) => {
+	uni.navigateTo({
+		url: `/pages/scenes/chat/chat/index?conversationID=c2c_${userID}`
+	})
+}
+
+const handleRemarkChange = (data: ContactInfoData) => {
+	uni.navigateTo({
+		url: `/pages/scenes/chat/contacts/setRemark/index`,
+		success: (res) => {
+			res.eventChannel.emit('remarkData', data)
+		}
+	})
+}
+
+const handleDeleteFriend = (userID: string) => {
+	console.log('删除好友:', userID)
+	uni.navigateBack({ delta: 1 })
+}
+
+const handleMuteChange = (value: boolean) => {
+	console.log('消息免打扰:', value)
+}
+
+const handlePinChange = (value: boolean) => {
+	console.log('置顶:', value)
+}
+
+const handleBlacklistChange = (value: boolean) => {
+	console.log('黑名单:', value)
+}
+</script>
+
+<style>
+.contact-info-page {
+	flex: 1;
+	background-color: #f5f5f5;
+}
+
+.page-content {
+	flex: 1;
+}
+</style>

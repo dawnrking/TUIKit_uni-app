@@ -1,6 +1,5 @@
 <script lang="ts">
   import { loginFromStorage } from './server/loginService';
-
   let firstBackTime = 0
 
   export default {

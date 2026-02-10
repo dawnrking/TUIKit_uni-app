@@ -49,11 +49,11 @@ interface IGroupState {
   /** 解散群组 */
   dismissGroup: (groupID: string) => Promise<void>;
   /** 同意入群申请 */
-  acceptGroupApplication: (applicationID: string) => Promise<void>;
+  acceptGroupApplication: (application: GroupApplicationInfo) => Promise<void>;
   /** 拒绝入群申请 */
-  refuseGroupApplication: (applicationID: string) => Promise<void>;
+  refuseGroupApplication: (application: GroupApplicationInfo) => Promise<void>;
   /** 清除入群申请未读数 */
-  clearGroupApplicationUnreadCount: (groupID: string) => Promise<void>;
+  clearGroupApplicationUnreadCount: (groupID?: string) => Promise<void>;
   /** 转让群主 */
   changeGroupOwner: (groupID: string, newOwnerID: string) => Promise<void>;
   /** 更新群资料 */
@@ -301,9 +301,31 @@ class GroupState implements IGroupState {
    * 获取入群申请列表
    */
   fetchGroupApplicationList = (): Promise<void> => {
-    // TODO: 实现 fetchGroupApplicationList
-    console.warn('[GroupState] fetchGroupApplicationList is not implemented yet');
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const options: HybridCallOptions = {
+        api: "fetchGroupApplicationList",
+        params: {
+          createStoreParams: this.instanceId
+        }
+      };
+
+      callAPI(options, (response: string) => {
+        try {
+          const result = safeJsonParse<HybridResponseData>(response, { code: -1 });
+          console.log(`[${this.instanceId}][fetchGroupApplicationList] Response:`, result);
+
+          if (result.code === 0) {
+            resolve();
+          } else {
+            console.error(`[${this.instanceId}][fetchGroupApplicationList] Failed:`, result.message, result.code);
+            reject(Object.assign(new Error(result.message || 'Failed to fetch group application list'), { errCode: result.code }));
+          }
+        } catch (error) {
+          console.error(`[${this.instanceId}][fetchGroupApplicationList] Parse error:`, error);
+          reject(error);
+        }
+      });
+    });
   }
 
   /**
@@ -386,9 +408,32 @@ class GroupState implements IGroupState {
    * @param message 申请理由（可选）
    */
   joinGroup = (groupID: string, message?: string): Promise<void> => {
-    // TODO: 实现 joinGroup
-    console.warn('[GroupState] joinGroup is not implemented yet');
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const options: HybridCallOptions = {
+        api: "joinGroup",
+        params: {
+          createStoreParams: this.instanceId,
+          groupID,
+          message: message || ''
+        }
+      };
+
+      callAPI(options, (response: string) => {
+        try {
+          const result = safeJsonParse<HybridResponseData>(response, { code: -1 });
+
+          if (result.code === 0) {
+            resolve();
+          } else {
+            console.error(`[${this.instanceId}][joinGroup] Failed:`, result.message, result.code);
+            reject(Object.assign(new Error(result.message || 'Failed to join group'), { errCode: result.code }));
+          }
+        } catch (error) {
+          console.error(`[${this.instanceId}][joinGroup] Parse error:`, error);
+          reject(error);
+        }
+      });
+    });
   }
 
   /**
@@ -457,22 +502,66 @@ class GroupState implements IGroupState {
 
   /**
    * 同意入群申请
-   * @param applicationID 申请 ID
+   * @param application 申请信息
    */
-  acceptGroupApplication = (applicationID: string): Promise<void> => {
-    // TODO: 实现 acceptGroupApplication
-    console.warn('[GroupState] acceptGroupApplication is not implemented yet');
-    return Promise.resolve();
+  acceptGroupApplication = (application: GroupApplicationInfo): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const options: HybridCallOptions = {
+        api: "acceptGroupApplication",
+        params: {
+          createStoreParams: this.instanceId,
+          info: JSON.stringify(application)
+        }
+      };
+
+      callAPI(options, (response: string) => {
+        try {
+          const result = safeJsonParse<HybridResponseData>(response, { code: -1 });
+
+          if (result.code === 0) {
+            resolve();
+          } else {
+            console.error(`[${this.instanceId}][acceptGroupApplication] Failed:`, result.message, result.code);
+            reject(Object.assign(new Error(result.message || 'Failed to accept group application'), { errCode: result.code }));
+          }
+        } catch (error) {
+          console.error(`[${this.instanceId}][acceptGroupApplication] Parse error:`, error);
+          reject(error);
+        }
+      });
+    });
   }
 
   /**
    * 拒绝入群申请
-   * @param applicationID 申请 ID
+   * @param application 申请信息
    */
-  refuseGroupApplication = (applicationID: string): Promise<void> => {
-    // TODO: 实现 refuseGroupApplication
-    console.warn('[GroupState] refuseGroupApplication is not implemented yet');
-    return Promise.resolve();
+  refuseGroupApplication = (application: GroupApplicationInfo): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const options: HybridCallOptions = {
+        api: "refuseGroupApplication",
+        params: {
+          createStoreParams: this.instanceId,
+          info: JSON.stringify(application)
+        }
+      };
+
+      callAPI(options, (response: string) => {
+        try {
+          const result = safeJsonParse<HybridResponseData>(response, { code: -1 });
+
+          if (result.code === 0) {
+            resolve();
+          } else {
+            console.error(`[${this.instanceId}][refuseGroupApplication] Failed:`, result.message, result.code);
+            reject(Object.assign(new Error(result.message || 'Failed to refuse group application'), { errCode: result.code }));
+          }
+        } catch (error) {
+          console.error(`[${this.instanceId}][refuseGroupApplication] Parse error:`, error);
+          reject(error);
+        }
+      });
+    });
   }
 
   /**
@@ -480,9 +569,31 @@ class GroupState implements IGroupState {
    * @param groupID 群 ID
    */
   clearGroupApplicationUnreadCount = (groupID: string): Promise<void> => {
-    // TODO: 实现 clearGroupApplicationUnreadCount
-    console.warn('[GroupState] clearGroupApplicationUnreadCount is not implemented yet');
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const options: HybridCallOptions = {
+        api: "clearGroupApplicationUnreadCount",
+        params: {
+          createStoreParams: this.instanceId,
+          groupID
+        }
+      };
+
+      callAPI(options, (response: string) => {
+        try {
+          const result = safeJsonParse<HybridResponseData>(response, { code: -1 });
+
+          if (result.code === 0) {
+            resolve();
+          } else {
+            console.error(`[${this.instanceId}][clearGroupApplicationUnreadCount] Failed:`, result.message, result.code);
+            reject(Object.assign(new Error(result.message || 'Failed to clear group application unread count'), { errCode: result.code }));
+          }
+        } catch (error) {
+          console.error(`[${this.instanceId}][clearGroupApplicationUnreadCount] Parse error:`, error);
+          reject(error);
+        }
+      });
+    });
   }
 
   /**

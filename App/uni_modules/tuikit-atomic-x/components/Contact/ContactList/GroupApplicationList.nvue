@@ -1,0 +1,240 @@
+<template>
+  <view class="group-notification-list">
+    <list class="list-scroll" :show-scrollbar="false">
+      <cell v-if="pendingApplicationList.length === 0" key="empty">
+        <view class="placeholder">
+          <component v-if="PlaceholderEmptyList" :is="PlaceholderEmptyList" text="暂无新的入群申请" />
+        </view>
+      </cell>
+
+      <template v-else>
+        <cell v-for="item in pendingApplicationList" :key="item.applicationID">
+          <view class="application-item" @click="handleItemClick(item)">
+            <component 
+              :is="Avatar"
+              :src="item.fromUserAvatarURL || ''"
+              :name="item.fromUserNickname || item.fromUser || ''"
+              :size="96"
+              shape="square"
+              defaultAvatarType="user"
+              pureMode
+            />
+            <view class="item-content">
+              <view class="item-info">
+                <text class="item-name" :numberOfLines="1">{{ item.fromUserNickname || item.fromUser }}</text>
+                <view class="item-desc-row">
+                  <text class="item-desc-label">验证信息：</text>
+                  <text class="item-desc" :numberOfLines="1">{{ item.requestMsg || '无' }}</text>
+                </view>
+                <text class="item-group-name" :numberOfLines="1">申请加入 {{ item.groupName || item.groupID }}</text>
+              </view>
+              <view class="item-actions">
+                <view class="action-btn action-btn--accept" @click.stop="handleAccept(item)">
+                  <text class="action-btn-text action-btn-text--accept">同意</text>
+                </view>
+                <view class="action-btn action-btn--reject" @click.stop="handleReject(item)">
+                  <text class="action-btn-text action-btn-text--reject">拒绝</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </cell>
+      </template>
+    </list>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import AvatarComponent from '../../Avatar'
+import DefaultEmptyList from '../placeholders/EmptyList.nvue'
+import DefaultLoading from '../placeholders/Loading.nvue'
+import { useGroupState } from '../../../state/GroupState'
+import type { GroupApplicationInfo } from '../../../types/contact'
+import { showToast } from '../../../utils/toast'
+
+interface GroupNotificationListProps {
+  Avatar?: any
+  PlaceholderEmptyList?: any
+  PlaceholderLoading?: any
+}
+
+interface GroupNotificationListEmits {
+  (e: 'itemClick', item: GroupApplicationInfo): void
+  (e: 'accept', item: GroupApplicationInfo): void
+  (e: 'reject', item: GroupApplicationInfo): void
+}
+
+const props = withDefaults(defineProps<GroupNotificationListProps>(), {
+  Avatar: () => AvatarComponent,
+  PlaceholderEmptyList: () => DefaultEmptyList,
+  PlaceholderLoading: () => DefaultLoading
+})
+
+const emit = defineEmits<GroupNotificationListEmits>()
+
+const {
+  groupApplicationUnreadCount,
+  clearGroupApplicationUnreadCount,
+  groupApplicationList,
+  acceptGroupApplication,
+  refuseGroupApplication
+} = useGroupState()
+
+const isLoading = ref(false)
+
+const pendingApplicationList = computed(() => {
+  return groupApplicationList.value.filter(item => item.handledStatus === 0)
+})
+
+const handleItemClick = (item: GroupApplicationInfo) => {
+  emit('itemClick', item)
+}
+
+const handleAccept = async (item: GroupApplicationInfo) => {
+  try {
+    await acceptGroupApplication(item)
+    showToast({ message: '已同意', type: 'success' })
+    emit('accept', item)
+  } catch (error: any) {
+    showToast({ message: error.message || '操作失败', type: 'error' })
+  }
+}
+
+const handleReject = async (item: GroupApplicationInfo) => {
+  try {
+    await refuseGroupApplication(item)
+    showToast({ message: '已拒绝', type: 'success' })
+    emit('reject', item)
+  } catch (error: any) {
+    showToast({ message: error.message || '操作失败', type: 'error' })
+  }
+}
+
+const handleClearUnreadCount = () => {
+  if(groupApplicationUnreadCount.value > 0) {
+    clearGroupApplicationUnreadCount()
+  }
+}
+
+onMounted(() => {
+  handleClearUnreadCount()
+})
+
+onBeforeUnmount(() => {
+  handleClearUnreadCount()
+})
+</script>
+
+<style>
+.group-notification-list {
+  flex: 1;
+  background-color: #F2F3F5;
+}
+
+.list-scroll {
+  flex: 1;
+}
+
+.placeholder {
+  padding-top: 100rpx;
+  padding-bottom: 100rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.application-item {
+  flex-direction: row;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background-color: #FFFFFF;
+  margin-bottom: 2rpx;
+}
+
+.item-content {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 24rpx;
+}
+
+.item-info {
+  flex: 1;
+  flex-direction: column;
+}
+
+.item-name {
+  font-size: 36rpx;
+  font-weight: 400;
+  line-height: 48rpx;
+  color: #111111;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.item-desc-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.item-desc-label {
+  font-size: 24rpx;
+  font-weight: 400;
+  line-height: 36rpx;
+  color: #888888;
+}
+
+.item-desc {
+  flex: 1;
+  font-size: 24rpx;
+  font-weight: 400;
+  line-height: 36rpx;
+  color: #888888;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.item-group-name {
+  font-size: 24rpx;
+  font-weight: 400;
+  line-height: 36rpx;
+  color: #666666;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.item-actions {
+  flex-direction: row;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 16rpx 24rpx;
+  border-radius: 100rpx;
+  margin-left: 10rpx;
+}
+
+.action-btn--accept {
+  background-color: #1C66E5;
+}
+
+.action-btn--reject {
+  background-color: #FFFFFF;
+  border:1rpx solid #E6E9F0;
+}
+
+.action-btn-text {
+  font-size: 26rpx;
+  font-weight: 400;
+  line-height: 32rpx;
+}
+
+.action-btn-text--accept {
+  color: #FFFFFF;
+}
+
+.action-btn-text--reject {
+  color: rgba(0, 0, 0, 0.9);
+}
+</style>

@@ -46,7 +46,7 @@ export default {
     return {
       statusBarHeight: 0,
       settings: [
-        { id: 'account', label: '账号与安全', icon: '/static/images/mine/account.png', route: '/pages/account/account' },
+        { id: 'account', label: '账号与安全', icon: '/static/images/mine/setting.png', route: '/pages/account/account' },
         { id: 'privacy', label: '隐私设置', icon: '/static/images/mine/privacy.png', route: '/pages/privacy/privacy' },
         { id: 'about', label: '关于我们', icon: '/static/images/mine/about.png', route: '/pages/about/about' },
       ]

@@ -1,5 +1,6 @@
 {
-  "pages": [{
+  "pages": [
+    {
       "path": "pages/login/login",
       "style": {
         "navigationStyle": "custom"
@@ -18,37 +19,48 @@
       }
     },
     {
+      "path": "pages/scenes/chat/conversationList/conversationList",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactList/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
       "path": "uni_modules/TencentCloud-Call/callkit/callPage",
       "style": {
         "navigationBarTitleText": "",
-        "navigationStyle": "custom",
-        "app-plus": {
-          "titleNView": false
-        }
+        "navigationStyle": "custom"
       }
-    },
-    {
-      "path": "pages/scenes/call/index",
-      "style": {
-        "navigationBarTitleText": "腾讯云 CallKit",
-        "navigationBarBackgroundColor": "#EBF0F6"
-      }
-    },
-    {
-      "path": "pages/scenes/call/call",
-      "style": {
-        "navigationBarTitleText": "腾讯云 CallKit",
-        "navigationBarBackgroundColor": "#EBF0F6"
-      }
-    },
-    {
-      "path": "pages/scenes/call/groupCall",
-      "style": {
-        "navigationBarTitleText": "腾讯云 CallKit",
-        "navigationBarBackgroundColor": "#EBF0F6"
-      }
-    },
-    {
+	  },
+	{
+		"path": "pages/scenes/call/index",
+		"style": {
+			"navigationBarTitleText": "腾讯云 CallKit",
+      "navigationBarBackgroundColor": "#EBF0F6"
+		}
+	},
+	{
+		"path": "pages/scenes/call/call",
+		"style": {
+			"navigationBarTitleText": "腾讯云 CallKit",
+      "navigationBarBackgroundColor": "#EBF0F6"
+		}
+	},
+	{
+		"path": "pages/scenes/call/groupCall",
+		"style": {
+			"navigationBarTitleText": "腾讯云 CallKit",
+      "navigationBarBackgroundColor": "#EBF0F6"
+		}
+	},
+      {
       "path": "pages/scenes/live/livelist/index",
       "style": {
         "navigationStyle": "custom"
@@ -82,13 +94,6 @@
         "app-plus": {
           "titleNView": false
         }
-      }
-    },
-    {
-      "path": "pages/scenes/chat/conversationList/conversationList",
-      "style": {
-        "navigationStyle": "custom",
-        "backgroundColor": "#f5f5f5"
       }
     },
     {
@@ -177,8 +182,91 @@
           "screenOrientation": ["portrait-primary", "landscape-primary", "landscape-secondary"]
         }
       }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactInfo/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/addFriend/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/addGroup/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactList/friendApplicationList",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactList/groupApplicationList",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactList/groupList",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/contactList/blackList",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/applicationVerify/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
+      "path": "pages/scenes/chat/contacts/setRemark/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f5f5f5"
+      }
     }
   ],
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#147AFF",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/scenes/chat/conversationList/conversationList",
+        "text": "消息",
+        "iconPath": "static/message.png",
+        "selectedIconPath": "static/message-selected.png"
+      },
+      {
+        "pagePath": "pages/scenes/chat/contacts/contactList/index",
+        "text": "通讯录",
+        "iconPath": "static/relation.png",
+        "selectedIconPath": "static/relation-selected.png"
+      }
+    ]
+  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "腾讯云 IM",

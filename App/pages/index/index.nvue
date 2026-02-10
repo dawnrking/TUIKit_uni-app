@@ -137,6 +137,12 @@ function navigateToModule(module) {
       icon: 'none'
     })
   }
+  if(module.isTabbar) {
+    uni.switchTab({
+      url: module.route,
+    })
+    return
+  }
   uni.navigateTo({
     url: module.route,
   });

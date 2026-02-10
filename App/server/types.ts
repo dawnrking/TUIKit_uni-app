@@ -11,6 +11,7 @@ export interface LoginInfo {
   token?: string;
   nickname?: string;
   avatarURL?: string;
+  appKey?: string;
 }
 
 /**

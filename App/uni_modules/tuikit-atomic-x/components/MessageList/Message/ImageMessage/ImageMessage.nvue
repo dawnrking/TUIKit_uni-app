@@ -133,11 +133,11 @@ const handleImageError = () => {
 }
 
 const handleImageTap = () => {
-  // if (loadingState.value === 'loaded') {
-  //   uni.previewImage({
-	// 		urls: [imageUrl.value],
-	// 	});
-  // }
+  if (loadingState.value === 'loaded') {
+    uni.previewImage({
+			urls: [imageUrl.value],
+		});
+  }
 }
 
 // 检查并下载图片资源

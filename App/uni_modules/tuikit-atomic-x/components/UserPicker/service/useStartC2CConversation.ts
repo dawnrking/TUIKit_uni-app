@@ -13,7 +13,7 @@ declare const uni: any
  */
 export function useStartC2CConversation(_routeParams?: any): UserPickerHookResult {
   // ======================== 数据源 ========================
-  const { friendList, destroyStore } = useContactState()
+  const { friendList, destroyStore } = useContactState('startC2CConversation')
   
   // ======================== 响应式状态 ========================
   

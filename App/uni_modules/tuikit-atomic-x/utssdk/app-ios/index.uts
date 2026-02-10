@@ -1633,6 +1633,7 @@ function genListenerKey(storeName:string, dataName:string, id?:string):string {
 }
 
 const hybridBridge = new HybridBridge(eventEmitter = (eventName:string, eventData:string) => {
+  console.warn(`>>>>> [UTS] eventEmitter called, eventName: ${eventName}`); 
   try {
     const data = JSON.parse<UTSJSONObject>(eventName);
     console.warn(`addListener, data:`, data);

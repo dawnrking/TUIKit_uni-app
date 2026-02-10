@@ -34,9 +34,7 @@
       </view>
     </view>
     
-    <view class="msg-actions__arrow-wrapper" :style="arrowWrapperStyle">
-      <image class="msg-actions__arrow" :src="arrowIcon" mode="aspectFit"></image>
-    </view>
+    <view class="msg-actions__arrow" :style="arrowWrapperStyle"></view>
   </view>
 </template>
 
@@ -48,7 +46,6 @@ import { useMessageActionState } from '../../../state/MessageActionState'
 import copyIcon from '../assets/msg_copy.png'
 import deleteIcon from '../assets/msg_delete.png'
 import recallIcon from '../assets/msg_recall.png'
-import arrowIcon from '../assets/msg_arrow.png'
 
 let deleteMessage;
 let recallMessage;
@@ -127,39 +124,46 @@ const containerStyle = computed(() => {
   }
   
   const systemInfo = uni.getSystemInfoSync()
-  const screenWidthRpx = 750
+  const screenWidthRpx = systemInfo.screenHeight || 750
   const avatarTotalWidth = 104 * 2 // 头像宽度
   const menuWidth = screenWidthRpx - avatarTotalWidth - 64 // 消息编辑弹窗的宽度
   const messageActionsHeiht = 64 // 消息操作弹窗高度
-  const messageActionsHeihtRpx = messageActionsHeiht / systemInfo.windowWidth * 750
+  const messageActionsHeihtRpx = messageActionsHeiht / systemInfo.windowWidth * screenWidthRpx
   const marginValue = 20
   // 不同平台的导航栏计算
   let navigationBarHeight = 44 // 默认
   if (systemInfo.platform === 'android') {
     navigationBarHeight = 48
   }
-  const totalNavHeight = (systemInfo?.safeArea?.top + navigationBarHeight) / systemInfo.windowWidth * 750
+  const totalNavHeight = (systemInfo?.safeArea?.top + navigationBarHeight) / systemInfo.windowWidth * screenWidthRpx
   
   const position = {
-    left: `${triggerPosition.value.x}rpx`,
-    top: `${triggerPosition.value.y - messageActionsHeihtRpx - marginValue}rpx`,
-    width: `${menuWidth}rpx`,
+    top: triggerPosition.value.y - messageActionsHeihtRpx - marginValue,
+    // width: `${menuWidth}rpx`,
     visibility: isPositioned.value ? 'visible' : 'hidden',  // 根据状态控制可见性
+  }
+  
+  // 根据消息是否为自己发送的来设置弹窗位置
+  if (triggerPosition.value.isSelf) {
+    position.right = `${triggerPosition.value.x}rpx`
+  } else {
+    position.left = `${triggerPosition.value.x}rpx`
   }
   // 根据 message 的宽度，设置箭头的位置, 箭头指向消息的中间位置
   arrowWrapperStyle.value = {
     left: `${(triggerPosition.value.messageX + triggerPosition.value.messageWidth / 2) * 750 / systemInfo.windowWidth}rpx`,
-    top: `${triggerPosition.value.y - marginValue - 16}rpx`,
+    top: `${position.top + messageActionsHeihtRpx - (14 / systemInfo.windowWidth * screenWidthRpx)}rpx`,
   }
   // 顶部空间不够, "消息操作" 弹窗在消息下面展示
   if ((triggerPosition.value.y - totalNavHeight) < messageActionsHeihtRpx) {
-    position.top = `${triggerPosition.value.y + triggerPosition.value.messageHeight + marginValue}rpx`
+    position.top = triggerPosition.value.y + triggerPosition.value.messageHeight + marginValue
     
     arrowWrapperStyle.value = {
       left: arrowWrapperStyle.value.left,
-      top: `${triggerPosition.value.y + triggerPosition.value.messageHeight + 12}rpx`,
+      top: `${position.top - (5 / systemInfo.windowWidth * screenWidthRpx)}rpx`
     }
   }
+  position.top = `${position.top}rpx`
   
   return position
 })
@@ -220,6 +224,7 @@ const setTriggerPosition = (position) => {
     messageX: position.messageX,
     messageWidth: position.messageWidth,
     messageHeight: position.messageHeight,
+    isSelf: position.isSelf,
   }
   // 位置设置完成后，延迟一帧显示，确保样式已计算完成
   setTimeout(() => {
@@ -251,17 +256,26 @@ defineExpose({
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
   padding: 33rpx 0 22rpx;
   z-index: 1000;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
+  left: auto;
+  right: auto;
 }
 
 .msg-actions__item {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* padding: 8rpx 24rpx; */
   min-width: 114rpx;
-  flex: 1;
+  margin: 0rpx 16rpx;
+}
+
+.msg-actions__item:first-child {
+  margin-left: 0rpx;
+}
+
+.msg-actions__item:last-child {
+  margin-right: 0rpx;
 }
 
 .msg-actions__item:active {
@@ -281,15 +295,11 @@ defineExpose({
   text-align: center;
 }
 
-.msg-actions__arrow-wrapper {
-  position: absolute;
-  width: 60rpx;
-  height: 60rpx;
-  left: 0rpx;
-}
 .msg-actions__arrow {
+  position: absolute;
   width: 24rpx;
   height: 24rpx;
+  background-color: #FFFFFF;
   transform: rotate(45deg);
 }
 </style>

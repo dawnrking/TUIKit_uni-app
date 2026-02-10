@@ -18,7 +18,7 @@ export function useInviteGroupMember(routeParams?: any): UserPickerHookResult {
   const groupID = conversationID.startsWith('group_') ? conversationID.replace('group_', '') : ''
   
   // ======================== 数据源 ========================
-  const { friendList, destroyStore: destroyContactListStore } = useContactState()
+  const { friendList, destroyStore: destroyContactListStore } = useContactState('inviteGroupMember')
   const { groupMemberList: allMembers, hasMoreGroupMembers, addGroupMember, fetchMoreGroupMemberList } = useGroupMemberState({ groupID });
 
   watch(() => allMembers.value.length, async () =>{

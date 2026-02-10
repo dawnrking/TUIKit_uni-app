@@ -100,7 +100,9 @@
 
 <script lang="ts">
 // 单独的 script 块用于导出
-export { DEFAULT_TOOLS, type ToolItem } from './types';
+import { DEFAULT_TOOLS } from './types';
+export { DEFAULT_TOOLS } from './types';
+export type { ToolItem } from './types';
 </script>
 
 <script setup lang="ts">
@@ -112,7 +114,6 @@ import { resolveSendError } from './utils/resolveSendError';
 import EmojiPanel from './EmojiPanel.nvue';
 import ToolsPanel from './ToolsPanel.nvue';
 import type { ToolItem } from './types';
-import { DEFAULT_TOOLS } from './types';
 
 const vueInstance = getCurrentInstance();
 

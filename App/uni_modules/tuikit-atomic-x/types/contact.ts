@@ -10,11 +10,18 @@ export enum ContactOnlineStatus {
   OFFLINE = 'OFFLINE'
 }
 
-/** 联系人类型 */
-export enum ContactType {
-  UNKNOWN = 'UNKNOWN',
-  USER = 'USER',
-  GROUP = 'GROUP'
+/** 消息接收选项 */
+export enum ReceiveMessageOpt {
+  /** 接收消息 */
+  RECEIVE = "RECEIVE",
+  /** 不接收消息 */
+  NOT_RECEIVE = "NOT_RECEIVE",
+  /** 不通知 */
+  NOT_NOTIFY = "NOT_NOTIFY",
+  /** 不通知（除了@消息） */
+  NOT_NOTIFY_EXCEPT_MENTION = "NOT_NOTIFY_EXCEPT_MENTION",
+  /** 不接收（除了@消息） */
+  NOT_RECEIVE_EXCEPT_MENTION = "NOT_RECEIVE_EXCEPT_MENTION"
 }
 
 /** 好友申请类型 */
@@ -57,18 +64,22 @@ export enum GroupApplicationHandledResult {
 
 /** 联系人信息 */
 export interface ContactInfo {
-  /** 联系人ID */
-  contactID: string
-  /** 联系人类型 */
-  type?: ContactType
+  /** 用户ID */
+  userID: string
   /** 头像URL */
   avatarURL?: string
-  /** 标题/名称 */
-  title?: string
-  /** 是否是联系人 */
+  /** 昵称 */
+  nickname?: string
+  /** 备注 */
+  remark?: string
+  /** 个性签名 */
+  signature?: string
+  /** 是否是好友 */
   isFriend?: boolean
-  /** 是否在群内 */
-  isInGroup?: boolean
+  /** 是否在黑名单 */
+  isInBlacklist?: boolean
+  /** 消息接收选项 */
+  receiveMessageOpt?: ReceiveMessageOpt
   /** 在线状态 */
   onlineStatus?: ContactOnlineStatus
 }
@@ -115,4 +126,73 @@ export interface GroupApplicationInfo {
   handledResult?: GroupApplicationHandledResult
   /** 申请类型 */
   type: GroupApplicationType
+}
+
+/** 通讯录入口类型 */
+export type EntryType = 'newContact' | 'groupNotification' | 'myGroups' | 'blacklist'
+
+/** 通讯录入口项 */
+export interface EntryItem {
+  type: EntryType
+  label: string
+  icon: string
+  visible: boolean
+  badge?: number
+}
+
+/** 联系人列表组件属性 */
+export interface ContactListProps {
+  Avatar?: any
+  PlaceholderEmptyList?: any
+  PlaceholderLoading?: any
+  showNewContact?: boolean
+  showGroupNotification?: boolean
+  showMyGroups?: boolean
+  showBlacklist?: boolean
+}
+
+/** 联系人列表组件事件 */
+export interface ContactListEmits {
+  (e: 'contactSelect', contact: ContactInfo): void
+  (e: 'entryClick', type: EntryType): void
+}
+
+/** 搜索到的用户信息 */
+export interface SearchUserInfo {
+  userID: string
+  nickname?: string
+  avatarURL?: string
+  isFriend?: boolean
+}
+
+/** 搜索到的群信息 */
+export interface SearchGroupInfo {
+  groupID: string
+  groupName?: string
+  avatarURL?: string
+  type?: string
+  memberCount?: number
+  isJoined?: boolean
+}
+
+/** 添加好友组件属性 */
+export interface AddFriendProps {
+  Avatar?: any
+}
+
+/** 添加好友组件事件 */
+export interface AddFriendEmits {
+  (e: 'userSelect', user: SearchUserInfo): void
+  (e: 'search', userID: string): void
+}
+
+/** 添加群聊组件属性 */
+export interface AddGroupProps {
+  Avatar?: any
+}
+
+/** 添加群聊组件事件 */
+export interface AddGroupEmits {
+  (e: 'groupSelect', group: SearchGroupInfo): void
+  (e: 'search', groupID: string): void
 }

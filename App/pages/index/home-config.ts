@@ -7,6 +7,7 @@ export interface ModuleItem {
   icon: string;
   description: string;
   route: string;
+  isTabbar?: boolean;
 }
 
 export interface SecurityDialogConfig {
@@ -28,7 +29,7 @@ const homeConfig: HomeConfig = {
   noticeText: '仅用于业务功能体验，请勿轻信汇款、中奖等涉及钱款的信息，谨防上当受骗，立即举报',
   modules: [
     {
-      id: 'chat',
+      id: 'call',
       title: '通话',
       icon: '/static/images/index/call-icon.png',
       description: '呼铃通知·通话悬浮窗·通话卡顿优化',
@@ -49,11 +50,12 @@ const homeConfig: HomeConfig = {
       route: ''
     },
     {
-      id: 'chatroom',
+      id: 'chat',
       title: '聊天',
       icon: '/static/images/index/chat-icon.png',
       description: '群组聊天·好友通讯录·语音消息·资料多端同步',
-      route: '/pages/scenes/chat/conversationList/conversationList'
+      route: '/pages/scenes/chat/conversationList/conversationList',
+      isTabbar: true
     }
   ],
 

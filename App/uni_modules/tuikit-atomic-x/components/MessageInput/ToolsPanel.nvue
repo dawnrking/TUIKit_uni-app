@@ -24,9 +24,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { UserPickerType } from '../../types/userpicker';
 import { useMessageInputState } from '../../state/MessageInputState';
-import type { ToolItem } from './types';
 import { DEFAULT_TOOLS } from './types';
+import type { ToolItem } from './types';
 
 interface ChooseImageSuccessResult {
   tempFiles: Array<{
@@ -71,12 +72,15 @@ const messageInputState = useMessageInputState({
   conversationID: props.conversationID,
 });
 
+// 计算属性
 const displayToolList = computed(() => {
   if (props.toolList && props.toolList.length > 0) {
     return props.toolList;
   }
   return DEFAULT_TOOLS;
 });
+
+const isC2CConversation = computed(() => props.conversationID.startsWith('c2c_'))
 
 // 移除无用的资源路径前缀
 const removeUnusedResourcePrefix = (path: string) => {
@@ -152,10 +156,48 @@ const handleToolClick = (tool: ToolItem) => {
         },
       });
       break;
+    case 'voiceCall':
+      startCall(1);
+      break;
+    case 'videoCall':
+      startCall(2);
+      break;
     default:
       console.log('Tool clicked:', tool);
   }
 };
+
+const startCall = (mediaType: number) => {
+  if (!uni.$TUICallKit || !uni.$TUIStore) {
+    plus.nativeUI.toast('请先集成 TUICallKit', { verticalAlign: 'top' });
+    return;
+  }
+  const getPeerUserID = () => {
+    return isC2CConversation.value ? props.conversationID.replace('c2c_', '') : ''
+  }
+  if (isC2CConversation.value) {
+    uni.$TUICallKit.calls({
+      userIDList: [getPeerUserID()],
+      mediaType,
+    })
+  } else {
+    uni.navigateTo({
+      url: `/pages/scenes/chat/userPicker/userPicker?businessType=${UserPickerType.SELECT_GROUP_MEMBER}&conversationID=${props.conversationID}`,
+      events: {
+        onSelectGroupMember: (data) => {
+          const userIDList = data.selectedUsers.map(user => user.userID);
+          uni.$TUICallKit.calls({
+            callParams: {
+              chatGroupID: props.conversationID.replace('group_', ''),
+            },
+            userIDList,
+            mediaType,
+          });
+        }
+      }
+    })
+  }
+}
 </script>
 
 <style scoped>

@@ -41,6 +41,8 @@ export enum GroupJoinOption {
 export enum GroupMemberRole {
   /** 所有成员（用于筛选） */
   All = 0,
+  /** 未定义 */
+  UNDEFINED = 0,
   /** 普通成员 */
   Member = 200,
   /** 管理员 */

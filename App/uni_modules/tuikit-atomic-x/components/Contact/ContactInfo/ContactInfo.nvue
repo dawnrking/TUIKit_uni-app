@@ -1,0 +1,162 @@
+<template>
+  <view class="contact-info">
+    <!-- 添加好友详情 -->
+    <AddFriendInfo
+      v-if="type === 'addFriend'"
+      :userInfo="userInfo"
+      :canAddFriend="canAddFriend"
+      :Avatar="Avatar"
+      @addFriend="handleAddFriend"
+    />
+
+    <!-- 新的联系人详情（好友申请） -->
+    <NewContactInfo
+      v-else-if="type === 'newContact'"
+      :application="friendApplication"
+      :Avatar="Avatar"
+      @accept="handleAcceptFriend"
+      @reject="handleRejectFriend"
+    />
+
+    <!-- 好友详情 -->
+    <FriendInfo
+      v-else-if="type === 'friend'"
+      :friendInfo="friendInfo"
+      :actions="friendInfoActions"
+      @sendMessage="handleSendMessage"
+      @remarkEdit="handleRemarkEdit"
+      @muteChange="handleMuteChange"
+      @pinChange="handlePinChange"
+      @blacklistChange="handleBlacklistChange"
+      @deleteFriend="handleDeleteFriend"
+    />
+
+    <!-- 空状态 -->
+    <view v-else class="contact-info__empty">
+      <text class="contact-info__empty-text">请选择联系人</text>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import AvatarComponent from '../../Avatar'
+import AddFriendInfo from './AddFriendInfo.nvue'
+import NewContactInfo from './NewContactInfo.nvue'
+import FriendInfo from './FriendInfo.nvue'
+import type { FriendApplicationInfo, ContactInfo } from '../../../types/contact'
+import type { FriendInfoAction } from '../config'
+
+export type ContactInfoType = 
+  | 'addFriend'      // 添加好友详情
+  | 'newContact'     // 新的联系人详情（好友申请）
+  | 'friend'         // 好友详情
+
+interface UserInfo {
+  userID: string
+  nickname?: string
+  avatarURL?: string
+  signature?: string
+  isFriend?: boolean
+  allowType?: number
+}
+
+interface ContactInfoProps {
+  type?: ContactInfoType
+  userInfo?: UserInfo | null
+  friendInfo?: ContactInfo | null
+  friendApplication?: FriendApplicationInfo | null
+  canAddFriend?: boolean
+  Avatar?: any
+  /** FriendInfo 自定义操作按钮列表 */
+  friendInfoActions?: FriendInfoAction[]
+}
+
+interface ContactInfoEmits {
+  // AddFriend events
+  (e: 'addFriend', userInfo: UserInfo): void
+  
+  // NewContact events
+  (e: 'acceptFriend', application: FriendApplicationInfo): void
+  (e: 'rejectFriend', application: FriendApplicationInfo): void
+  
+  // Friend events
+  (e: 'sendMessage', userID: string): void
+  (e: 'remarkEdit', friendInfo: ContactInfo): void
+  (e: 'deleteFriend', userID: string): void
+  
+  // Common events
+  (e: 'muteChange', value: boolean): void
+  (e: 'pinChange', value: boolean): void
+  (e: 'blacklistChange', value: boolean): void
+}
+
+const props = withDefaults(defineProps<ContactInfoProps>(), {
+  type: undefined,
+  userInfo: null,
+  friendInfo: null,
+  friendApplication: null,
+  canAddFriend: true,
+  Avatar: () => AvatarComponent,
+  friendInfoActions: () => []
+})
+
+const emit = defineEmits<ContactInfoEmits>()
+
+// AddFriend handlers
+const handleAddFriend = (userInfo: UserInfo) => {
+  emit('addFriend', userInfo)
+}
+
+// NewContact handlers
+const handleAcceptFriend = (application: FriendApplicationInfo) => {
+  emit('acceptFriend', application)
+}
+
+const handleRejectFriend = (application: FriendApplicationInfo) => {
+  emit('rejectFriend', application)
+}
+
+// Friend handlers
+const handleSendMessage = (userID: string) => {
+  emit('sendMessage', userID)
+}
+
+const handleRemarkEdit = (friendInfo: ContactInfo) => {
+  emit('remarkEdit', friendInfo)
+}
+
+const handleDeleteFriend = (userID: string) => {
+  emit('deleteFriend', userID)
+}
+
+// Common handlers
+const handleMuteChange = (value: boolean) => {
+  emit('muteChange', value)
+}
+
+const handlePinChange = (value: boolean) => {
+  emit('pinChange', value)
+}
+
+const handleBlacklistChange = (value: boolean) => {
+  emit('blacklistChange', value)
+}
+</script>
+
+<style>
+.contact-info {
+  flex: 1;
+  background-color: #F5F5F5;
+}
+
+.contact-info__empty {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+.contact-info__empty-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+</style>

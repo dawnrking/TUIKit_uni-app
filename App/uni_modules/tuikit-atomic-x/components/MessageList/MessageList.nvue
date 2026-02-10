@@ -39,8 +39,10 @@
             :showAvatar="item.showAvatar"
             :showNickname="item.showNickname"
             :highlight="item.message?.msgID === currentHighlightID"
+            :customCenterChecker="customCenterChecker"
             @reEdit="handleReEdit"
             @onMessageListTap="handleMessageListTap"
+            @onMessageTap="handleMessageTap"
           />
         </view>
       </cell>
@@ -71,6 +73,7 @@ import { useListTransform } from './useListTransform'
 import { MessageStatus, MessageType, MessageListType, MessageFetchDirection } from '../../types/message'
 import { rpxToPx } from '../../utils/unitUtils'
 import type { MessageInfo } from '../../types/message'
+import type { CustomCenterChecker } from '../../utils/callMessageUtils'
 
 const instance = getCurrentInstance();
 
@@ -87,6 +90,8 @@ interface Props {
   inputToolbarHeight?: number
   // 键盘/Emoji面板高度（px）
   inputPanelHeight?: number
+  // 自定义居中消息判断方法
+  customCenterChecker?: CustomCenterChecker | null
 }
 
 interface MessageListExpose {
@@ -103,12 +108,14 @@ const props = withDefaults(defineProps<Props>(), {
   filter: null,
   locateMessage: null,
   inputToolbarHeight: 0,
-  inputPanelHeight: 0
+  inputPanelHeight: 0,
+  customCenterChecker: null
 })
 
 const emit = defineEmits<{
   reEdit: [data: any]
   onMessageListTap: []
+  onMessageTap: [message: MessageInfo]
 }>()
 
 const navbarHeightPx = ref(0);
@@ -395,6 +402,10 @@ const handleReEdit = (data: any) => {
 
 const handleMessageListTap = () => {
   emit('onMessageListTap')
+}
+
+const handleMessageTap = (message: MessageInfo) => {
+  emit('onMessageTap', message)
 }
 
 watch(messageList, (newMessages, oldMessages) => {

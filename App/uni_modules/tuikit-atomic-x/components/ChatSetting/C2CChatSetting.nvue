@@ -139,7 +139,7 @@ const {
   removeFromBlacklist,
   deleteFriend,
   fetchUserInfo,
-} = useContactState();
+} = useContactState('c2cSetting');
 
 // 使用 ConversationListState 获取置顶状态
 const {
@@ -371,6 +371,9 @@ const handleNavBack = () => {
   color: rgba(0, 0, 0, 0.9);
   margin-bottom: 8rpx;
   line-height: 48rpx;
+  lines: 1;
+  text-overflow: ellipsis;
+  max-width: 400rpx;
 }
 
 .user-info__id {

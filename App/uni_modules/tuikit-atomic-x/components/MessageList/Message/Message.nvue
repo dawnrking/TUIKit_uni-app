@@ -13,6 +13,11 @@
       v-else-if="isSystemMessage || isGroupCreateMessage" 
       :message="message" 
     />
+    <CustomMessage
+      v-else-if="isCustomCenterMessage"
+      :message="message"
+      :conversationID="conversationID"
+    />
   </view>
   <view 
     v-else
@@ -104,6 +109,7 @@ import MessageActions from './MessageActions.nvue'
 import type { MessageInfo } from '../../../types/message'
 import { MessageType, MessageStatus } from '../../../types/message'
 import { formatTime } from '../../../utils/timeUtils'
+import { isGroupCallMessage, isCallMessage, isVideoCall, parseCallMessageData, CallType } from '../../../utils/callMessageUtils'
 
 const animation = uni.requireNativePlugin('animation')
 
@@ -115,6 +121,7 @@ interface Props {
   showTime?: boolean
   messageActionList?: any[]
   highlight?: boolean
+  customCenterChecker?: (message: MessageInfo, conversationID: string) => boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -123,11 +130,14 @@ const props = withDefaults(defineProps<Props>(), {
   showNickname: true,
   showTime: false,
   messageActionList: () => [],
-  highlight: false
+  highlight: false,
+  customCenterChecker: null
 })
 
 const emit = defineEmits<{
   onMessageListTap: []
+  reEdit: [data: any]
+  onMessageTap: [message: MessageInfo]
 }>()
 
 const showActions = ref(false)
@@ -181,11 +191,19 @@ const isGroupCreateMessage = computed(() => {
   return false;
 })
 
+const isCustomCenterMessage = computed(() => {
+  if (props.customCenterChecker) {
+    return props.customCenterChecker(props.message, props.conversationID)
+  }
+  return isGroupCallMessage(props.message, props.conversationID)
+})
+
 const isCenterMessage = computed(() => {
   if (
     props.message.status === MessageStatus.RECALLED
     || isSystemMessage.value
     || isGroupCreateMessage.value
+    || isCustomCenterMessage.value
   ) {
     return true;
   }
@@ -427,6 +445,7 @@ const handleLongPress = async (e: any) => {
       messageX: messagePosition.left,
       messageWidth: messagePosition.width,
       messageHeight: messagePosition.height / systemInfo.windowWidth * 750,
+      isSelf: props.message.isSelf,
     }
     
     longPressPosition.value = adjustedPosition
@@ -459,8 +478,29 @@ const handleTap = () => {
   emit('onMessageListTap')
 }
 
+// 处理 C2C 会话中的通话消息点击
+const handleC2CCallMessageTap = (): boolean => {
+  if (!isCallMessage(props.message) || !props.conversationID.startsWith('c2c_')) {
+    return false
+  }
+  
+  const callData = parseCallMessageData(props.message)
+  const mediaType = isVideoCall(callData) ? CallType.VIDEO : CallType.AUDIO
+  const peerUserID = props.conversationID.replace('c2c_', '')
+  
+  if (peerUserID && uni.$TUICallKit) {
+    uni.$TUICallKit.calls({
+      userIDList: [peerUserID],
+      mediaType
+    })
+  }
+  return true
+}
+
 const handleMessageContentTap = () => {
   emit('onMessageListTap')
+  handleC2CCallMessageTap()
+  emit('onMessageTap', props.message);
 }
 
 const handleResend = () => {

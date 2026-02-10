@@ -1,0 +1,70 @@
+<template>
+  <view class="set-remark-page">
+    <CustomNavbar title="修改备注" :showBack="true" @back="handleBack" />
+
+    <!-- 页面内容 -->
+    <view class="page-content">
+      <SetRemark 
+        :userID="userID"
+        :remark="remark"
+        @success="handleSuccess"
+        @fail="handleFail"
+        @cancel="handleCancel"
+      />
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { SetRemark } from '@/uni_modules/tuikit-atomic-x/components/Contact/ContactInfo'
+import CustomNavbar from '@/uni_modules/tuikit-atomic-x/components/CustomNavbar/CustomNavbar.nvue'
+import type { ContactInfo } from '@/uni_modules/tuikit-atomic-x/types/contact'
+
+
+const friendInfo = ref<ContactInfo | null>(null)
+
+const userID = computed(() => friendInfo.value?.userID || '')
+const remark = computed(() => friendInfo.value?.remark || '')
+
+onLoad(() => {
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const eventChannel = (currentPage as any).getOpenerEventChannel?.()
+  if (eventChannel) {
+    eventChannel.on('remarkData', (data: ContactInfo) => {
+      friendInfo.value = data
+    })
+  }
+})
+
+const handleBack = () => {
+  uni.navigateBack({ delta: 1 })
+}
+
+const handleSuccess = (userID: string, remark: string) => {
+  setTimeout(() => {
+    uni.navigateBack({ delta: 1 })
+  }, 1500)
+}
+
+const handleFail = (error: any) => {
+  console.error('设置备注失败:', error)
+}
+
+const handleCancel = () => {
+  uni.navigateBack({ delta: 1 })
+}
+</script>
+
+<style>
+.set-remark-page {
+  flex: 1;
+  background-color: #F0F2F7;
+}
+
+.page-content {
+  flex: 1;
+}
+</style>

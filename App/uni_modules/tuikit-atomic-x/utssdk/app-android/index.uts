@@ -1675,3 +1675,7 @@ export function removeListener(options:HybridListenerOptions){
 export function callAPI(options:HybridCallOptions, callback:(result:string) => void){
   hybridBridge.callAPI(JSON.stringify(options), callback);
 }
+
+export function callAPIV2(options: string, callback: (result: string) => void) {
+  hybridBridge.callAPI(options, callback)
+}

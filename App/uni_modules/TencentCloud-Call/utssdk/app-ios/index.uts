@@ -232,7 +232,7 @@ export class CallEngine {
 
   public setBeautyLevel(beautyLevel : number) {
     console.log(`${NAME.PREFIX} setBeautyLevel.start, data: ${beautyLevel}`);
-    this.callBridge.setBeautyLevel((beautyLevel = beautyLevel.toFloat());
+    this.callBridge.setBeautyLevel(beautyLevel = beautyLevel.toFloat());
   }
   public openMicrophone(options : CallbackOptions) {
     console.log(`${NAME.PREFIX} openMicrophone.start, data: ${options}`);

@@ -10,7 +10,7 @@
 import { ref, type Ref } from "vue";
 import { UserProfileParam, LoginOptions, LogoutOptions, SetSelfInfoOptions } from "@/uni_modules/tuikit-atomic-x";
 import { safeJsonParse } from "../utils/utsUtils";
-import { addListener, callAPI, removeListener } from "@/uni_modules/tuikit-atomic-x";
+import { addListener, callAPI, callAPIV2, removeListener } from "@/uni_modules/tuikit-atomic-x";
 
 declare const uni: any;
 
@@ -61,11 +61,18 @@ const loginUserInfo: Ref<UserProfileParam | undefined> = getGlobalState().loginU
  * @memberof module:LoginState
  * @example
  * import { useLoginState } from '@/uni_modules/tuikit-atomic-x/state/LoginState';
- * const { logout } = useLoginState();
- * logout({
- *   onSuccess: () => console.log('登出成功'),
- *   onError: (error) => console.error('登出失败:', error)
+ * const { loginStatus } = useLoginState();
+ * 
+ * // 监听登录状态变化
+ * watch(loginStatus, (newStatus) => {
+ *   if (newStatus) {
+ *     console.log('登录状态更新:', newStatus);
+ *   }
  * });
+ * 
+ * // 获取当前登录状态
+ * const currentStatus = loginStatus.value;
+ * console.log('当前登录状态:', currentStatus);
  */
 const loginStatus: Ref<string | undefined> = getGlobalState().loginStatus;
 
@@ -86,8 +93,8 @@ const createStoreParams = JSON.stringify({
  *   sdkAppID: 1400000000,
  *   userID: 'user123',
  *   userSig: 'eJx1kF1PwzAMhv9KlG...',
- *   onSuccess: () => console.log('登录成功'),
- *   onError: (error) => console.error('登录失败:', error)
+ *   success: () => console.log('登录成功'),
+ *   fail: (code, message) => console.error('登录失败:', code, message)
  * });
  */
 function login(params: LoginOptions): void {
@@ -191,36 +198,35 @@ function unbindEvent(): void {
 
 /**
  * 设置用户信息
- * @param {SetSelfInfoOptions} userInfo - 用户信息
+ * @param {SetSelfInfoOptions} params - 用户信息参数
  * @returns {void}
  * @memberof module:LoginState
  * @example
  * import { useLoginState } from '@/uni_modules/tuikit-atomic-x/state/LoginState';
  * const { setSelfInfo } = useLoginState();
- * setSelfInfo(
- *  userProfile: {
+ * setSelfInfo({
  *   userID: 'user123',
  *   nickname: '张三',
  *   avatarURL: 'https://example.com/avatar.jpg',
- *   onSuccess: () => console.log('用户信息设置成功'),
- *   onError: (error) => console.error('用户信息设置失败:', error)
+ *   success: () => console.log('用户信息设置成功'),
+ *   fail: (code, message) => console.error('用户信息设置失败:', code, message)
  * });
  */
 function setSelfInfo(params: SetSelfInfoOptions): void {
-    const { onSuccess, onError, ...userProfile} = params;
-    callAPI({
+    const { success, onError, ...userProfile} = params;
+    callAPIV2(JSON.stringify({
         api: "setSelfInfo",
         params: userProfile,
-    }, (res: string) =>{
+    }), (res: string) =>{
         try {
             const data = safeJsonParse(res, {}) as any;
             if (data?.code === 0) {
-                onSuccess?.(data);
+                success?.();
             } else {
-                onError?.(data);
+                params?.fail(data.code, data.message);
             }
         } catch (error) {
-            
+            params?.fail(-1, error.message);
         }
 
     });

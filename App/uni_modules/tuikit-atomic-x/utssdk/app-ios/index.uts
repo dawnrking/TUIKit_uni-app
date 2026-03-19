@@ -91,15 +91,16 @@ export class RTCRoomEngineManager {
                 console.error(`${RTC_TAG} login error, error: ${code}, errMsg: ${message}`);
                 options.fail?.(Number.from(code.rawValue), message as string);
               }
-                    },
+            )
+          },
           failure = (code : Int, message : String) : void => {
-            console.error(`${RTC_TAG} login fail, error: ${code}, errMsg: ${message}`);
+            console.error(`${RTC_TAG} login error, error: ${code}, errMsg: ${message}`);
             options.fail?.(Number.from(code), message as string);
           }
         )
       )
-    }
-    }
+    })
+  }
 
   public setFramework() {
     const data = { "api": "setFramework", "params": { "framework": 11, "component": 21 } }
@@ -292,27 +293,29 @@ export class RTCRoomEngineManager {
         )
       )
     });
-    public updateLiveMetaData(options : UpdateLiveMetaDataOptions) {
-      DispatchQueue.main.async(execute = () : void => {
-        console.log(`${LIVE_TAG} updateLiveMetaData, data: ${JSON.stringify(options)}`);
-        
-        let jsonObject = ParamsCovert.convertJsonToUTSJSONObject(options.metaData)
-        let metaData = new Map<string,string>()
-        jsonObject.toMap().forEach(function (value: any | null, key: string) {
-            metaData.set(key, JSON.stringify(value) ?? "")
-        })
-        LiveListStore.shared.updateLiveMetaData(
-          metaData,
-          completion = JsonUtil.toCompletionClosure(
-            success = () : void => {
-              options.success?.();
-            },
-            failure = (code : Int, message : String) : void => {
-              options.fail?.(Number.from(code), message as string);
-            }
-          )
+  }
+
+  public updateLiveMetaData(options : UpdateLiveMetaDataOptions) {
+    DispatchQueue.main.async(execute = () : void => {
+      console.log(`${LIVE_TAG} updateLiveMetaData, data: ${JSON.stringify(options)}`);
+
+      let jsonObject = ParamsCovert.convertJsonToUTSJSONObject(options.metaData)
+      let metaData = new Map<string, string>()
+      jsonObject.toMap().forEach(function (value : any | null, key : string) {
+        metaData.set(key, JSON.stringify(value) ?? "")
+      })
+      LiveListStore.shared.updateLiveMetaData(
+        metaData,
+        completion = JsonUtil.toCompletionClosure(
+          success = () : void => {
+            options.success?.();
+          },
+          failure = (code : Int, message : String) : void => {
+            options.fail?.(Number.from(code), message as string);
+          }
         )
-      });
+      )
+    });
   }
 
   // ================= LiveSeatStore 相关接口 =================
@@ -1148,11 +1151,10 @@ export class RTCRoomEngineManager {
   public sendTextMessage(options : SendTextMessageOptions) {
     DispatchQueue.main.async(execute = () : void => {
       console.log(`${BARRAGE_TAG} sendTextMessage, data: ${JSON.stringify(options)}`);
-      
       let jsonObject = ParamsCovert.convertJsonToUTSJSONObject(options.extensionInfo)
-      let mapData = new Map<string,string>()
-      jsonObject.toMap().forEach(function (value: any | null, key: string) {
-          mapData.set(key, JSON.stringify(value) ?? "")
+      let mapData = new Map<string, string>()
+      jsonObject.toMap().forEach(function (value : any | null, key : string) {
+        mapData.set(key, JSON.stringify(value) ?? "")
       })
 
       BarrageStore.create(liveID = options.liveID).sendTextMessage(
@@ -1728,4 +1730,8 @@ export function removeListener(options:HybridListenerOptions){
 
 export function callAPI(options:HybridCallOptions, callback:(result:string) => void){
   hybridBridge.callAPI(json = JSON.stringify(options) ?? "", callback = callback);
+}
+
+export function callAPIV2(options: string, callback: (result: string) => void) {
+  hybridBridge.callAPI(json = options ?? "", callback = callback);
 }
